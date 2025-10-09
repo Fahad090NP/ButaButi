@@ -32,7 +32,6 @@ Cargo.lock
 # Documentation
 /docs/
 !/docs/README.md
-/ButaButi.wiki/
 
 # Profiling
 flamegraph.svg
