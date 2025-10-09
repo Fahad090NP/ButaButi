@@ -154,7 +154,7 @@ mod tests {
 
         read(&mut cursor, &mut pattern).unwrap();
 
-        assert!(pattern.stitches().len() > 0);
+        assert!(!pattern.stitches().is_empty());
     }
 
     #[test]

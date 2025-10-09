@@ -227,7 +227,7 @@ mod tests {
         u01_reader::read(&mut cursor, &mut pattern2).unwrap();
 
         // Should have similar number of stitches (encoding may add/modify slightly)
-        assert!(pattern2.stitches().len() > 0);
+        assert!(!pattern2.stitches().is_empty());
     }
 
     #[test]

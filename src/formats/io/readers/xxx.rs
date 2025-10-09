@@ -170,7 +170,7 @@ mod tests {
         read(&mut cursor, &mut pattern).unwrap();
 
         let stitches = pattern.stitches();
-        assert!(stitches.len() >= 1);
+        assert!(!stitches.is_empty());
         // Y is flipped, so 100 becomes -100
         assert_eq!((stitches[0].command & COMMAND_MASK), JUMP);
     }

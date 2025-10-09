@@ -131,7 +131,8 @@
 - [ ] Add text-to-embroidery conversion
 - [ ] Add font rendering to stitches
 - [ ] Add command-line tool for conversions
-- [ ] Add batch conversion support
+- [x] Add batch conversion support
+- [x] Add multi-format export functionality
 - [ ] Add pattern preview generation
 - [ ] Add progress callbacks for long operations
 - [ ] Add error recovery mechanisms

@@ -66,6 +66,9 @@ pub mod prelude {
     pub use crate::core::matrix::EmbMatrix;
     pub use crate::core::pattern::EmbPattern;
     pub use crate::core::thread::EmbThread;
+    pub use crate::utils::batch::{
+        BatchConverter, ConversionResult, ConversionResults, MultiFormatExporter,
+    };
     pub use crate::utils::error::*;
 }
 

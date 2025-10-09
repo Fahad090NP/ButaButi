@@ -58,7 +58,7 @@ mod tests {
         let mut stx_data = vec![];
 
         // Skip first 0x0C bytes
-        stx_data.extend_from_slice(&vec![0u8; 0x0C]);
+        stx_data.extend_from_slice(&[0u8; 0x0C]);
 
         // Positions
         let color_pos = 100u32;

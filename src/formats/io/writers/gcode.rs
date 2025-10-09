@@ -296,7 +296,7 @@ mod tests {
         gcode::read(&mut buffer, &mut read_back).unwrap();
 
         // Verify we have stitches
-        assert!(read_back.stitches().len() > 0);
+        assert!(!read_back.stitches().is_empty());
 
         // Verify color change is preserved
         let commands: Vec<u32> = read_back

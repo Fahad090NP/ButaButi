@@ -197,9 +197,41 @@ let stitch_count = pattern.count_stitches();
 let color_changes = pattern.count_color_changes();
 ```
 
+## Do's and Don'ts
+
+### ✅ DO
+
+- **Run tests after every change**: `cargo test --lib` must pass with 0 failures
+- **Fix clippy warnings**: `cargo clippy -- -D warnings` must produce zero warnings
+- **Format code**: Run `cargo fmt` before committing
+- **Write unit tests**: Every new function/feature needs `#[cfg(test)]` module tests
+- **Use builder patterns**: For complex configuration (see `BatchConverter`, `MultiFormatExporter`)
+- **Handle errors gracefully**: Use `Result<T>` and proper error messages, never `panic!()` in library code
+- **Document public APIs**: Add doc comments (`///`) for all public functions, structs, and methods
+- **Follow coordinate system**: Always use 0.1mm units (100.0 = 10mm)
+- **Validate inputs**: Check bounds, formats, and preconditions before processing
+- **Update TODOS.md**: Mark features as `[x]` when completed
+
+### ❌ DON'T
+
+- **Don't create markdown files automatically**: Documentation files should only be created when explicitly requested
+  - There is a `documentation/` folder for docs - only add files there when instructed
+  - Don't create summary files like `IMPLEMENTATION.md`, `SUMMARY.md`, etc. after changes
+  - README.md and TODOS.md are the only markdown files to update routinely
+- **Don't use `panic!()` in library code**: Always return `Result` with descriptive errors
+- **Don't use `unwrap()` without good reason**: Prefer `?` operator or proper error handling
+- **Don't make breaking API changes**: Maintain backward compatibility for public APIs
+- **Don't skip validation**: Always run `.\validate.ps1` before considering work complete
+- **Don't commit with warnings**: Code must be clippy-clean with `-D warnings`
+- **Don't use magic numbers**: Define constants for format-specific values
+- **Don't forget Y-axis conventions**: Some formats flip Y-coordinates (document this)
+- **Don't mix coordinate systems**: Stick to 0.1mm units throughout
+- **Don't create docs without request**: Wait for explicit instruction to create documentation
+
 ## Resources
 
 - Format specs in inline comments (e.g., `readers/dst.rs` documents DST encoding)
 - Thread palettes: `palettes/thread_*.rs` (brand-specific color mappings)
 - TODO list: `TODOS.md` (comprehensive feature roadmap)
 - Contributing guide: `CONTRIBUTING.md` (PR requirements, code standards)
+- Documentation folder: `documentation/` (only add files when explicitly requested)

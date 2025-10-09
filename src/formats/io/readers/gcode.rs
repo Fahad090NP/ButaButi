@@ -243,6 +243,6 @@ M30
 
         // In inch mode, 1.0 inch = 254 units (25.4mm)
         // With flip_x and flip_y = -1, coordinates should be -254.0
-        assert!(pattern.stitches().len() >= 1);
+        assert!(!pattern.stitches().is_empty());
     }
 }

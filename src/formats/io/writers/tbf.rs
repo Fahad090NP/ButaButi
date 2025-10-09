@@ -318,6 +318,6 @@ mod tests {
         }
 
         // Verify we have stitches
-        assert!(read_back.stitches().len() > 0);
+        assert!(!read_back.stitches().is_empty());
     }
 }

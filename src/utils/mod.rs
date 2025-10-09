@@ -1,7 +1,10 @@
 //! Utility functions and helpers
 //!
 //! This module contains utility functions for compression, error handling,
-//! and pattern processing.
+//! pattern processing, and batch conversion operations.
+
+/// Batch conversion and multi-format export utilities
+pub mod batch;
 
 /// Huffman compression for HUS format
 pub mod compress;

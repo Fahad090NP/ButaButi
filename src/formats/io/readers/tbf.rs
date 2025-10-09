@@ -169,7 +169,7 @@ mod tests {
         read(&mut cursor, &mut pattern).unwrap();
 
         assert_eq!(pattern.threads().len(), 1);
-        assert!(pattern.stitches().len() >= 1);
+        assert!(!pattern.stitches().is_empty());
 
         // Check metadata
         if let Some(name) = pattern.get_metadata("name") {

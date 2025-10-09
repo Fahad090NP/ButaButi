@@ -118,13 +118,13 @@ mod tests {
         jpx_data.extend_from_slice(&stitch_pos.to_le_bytes());
 
         // Skip 0x1C bytes
-        jpx_data.extend_from_slice(&vec![0u8; 0x1C]);
+        jpx_data.extend_from_slice(&[0u8; 0x1C]);
 
         // Colors: 1
         jpx_data.extend_from_slice(&[1, 0, 0, 0]);
 
         // Skip 0x18 bytes
-        jpx_data.extend_from_slice(&vec![0u8; 0x18]);
+        jpx_data.extend_from_slice(&[0u8; 0x18]);
 
         // Color index 0
         jpx_data.extend_from_slice(&[0, 0, 0, 0]);
@@ -155,9 +155,9 @@ mod tests {
 
         let stitch_pos = 100u32;
         jpx_data.extend_from_slice(&stitch_pos.to_le_bytes());
-        jpx_data.extend_from_slice(&vec![0u8; 0x1C]);
+        jpx_data.extend_from_slice(&[0u8; 0x1C]);
         jpx_data.extend_from_slice(&[2, 0, 0, 0]); // 2 colors
-        jpx_data.extend_from_slice(&vec![0u8; 0x18]);
+        jpx_data.extend_from_slice(&[0u8; 0x18]);
         jpx_data.extend_from_slice(&[0, 0, 0, 0]); // Color 0
         jpx_data.extend_from_slice(&[1, 0, 0, 0]); // Color 1
 
