@@ -1,0 +1,57 @@
+# Rust build artifacts
+/target/
+**/target/
+Cargo.lock
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test outputs
+/testing/
+*.dst
+*.pes
+*.exp
+*.jef
+*.vp3
+*.pec
+*.xxx
+*.u01
+*.csv
+*.json
+*.png
+*.svg
+
+# Backup files
+*.bak
+*.orig
+
+# Documentation
+/docs/
+!/docs/README.md
+
+# Profiling
+flamegraph.svg
+perf.data
+perf.data.old
+
+# Benchmark results
+/benches/results/
+
+# Coverage
+*.profraw
+*.profdata
+coverage/
+lcov.info
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
