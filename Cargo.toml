@@ -2,17 +2,14 @@
 name = "butabuti"
 version = "0.1.0"
 edition = "2021"
-authors = ["ButaButi Contributors"]
-description = "High-performance Rust library for reading, writing, and manipulating embroidery files"
+authors = ["Fahad Iftikhar <fahad090np@gmail.com>"]
+description = "High-performance Rust library for reading, writing, and manipulating 40+ embroidery file formats"
 license = "MIT"
 repository = "https://github.com/Fahad090NP/ButaButi"
-keywords = [
-    "machine embroidery",
-    "embroidery formats",
-    "embroidery parser",
-    "embroidery writer",
-]
-categories = ["parser-implementations", "encoding"]
+documentation = "https://github.com/Fahad090NP/ButaButi/wiki"
+homepage = "https://github.com/Fahad090NP/ButaButi"
+keywords = ["embroidery", "dst", "pes", "jef", "converter"]
+categories = ["parser-implementations", "encoding", "graphics"]
 readme = "README.md"
 
 [dependencies]
@@ -22,7 +19,6 @@ serde_json = "1.0"
 
 # Error handling
 thiserror = "1.0"
-anyhow = "1.0"
 
 # Binary data handling
 byteorder = "1.5"
