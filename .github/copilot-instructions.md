@@ -44,14 +44,15 @@ const THREAD_MASK: u32 = 0x0000_FF00;   // Thread info in bits 8-15
 **Readers** mutate an existing `EmbPattern` (critical: pattern must be pre-initialized):
 
 ```rust
-// Most formats
+// Most formats - mutate pattern in-place
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>
 
 // Formats requiring Seek (e.g., JEF, BRO, HUS) - read header/footer separately
 pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<()>
 
-// Some legacy formats have convenience wrappers
-pub fn read_file(path: &str) -> Result<EmbPattern>  // Creates pattern internally
+// Exception: VP3 and PES return new pattern (legacy API, pre-refactor)
+pub fn read<R: Read + Seek>(reader: &mut R) -> Result<EmbPattern>
+pub fn read_file(path: &str) -> Result<EmbPattern>  // Convenience wrapper
 ```
 
 **Writers** write immutable pattern to stream:
@@ -61,6 +62,8 @@ pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()>
 ```
 
 **Why mutation?** Allows reusing pattern buffers in batch processing and avoids cloning large stitch arrays.
+
+**Binary I/O Helpers**: Import `formats::io::utils::WriteHelper` for binary writes - provides methods like `write_u8()`, `write_u16_le()`, `write_string_fixed()` to enforce format-specific requirements.
 
 #### Pattern Building API
 
@@ -87,7 +90,26 @@ cargo fmt                     # Format code
 .\validate.ps1                # Run all checks (build, test, clippy, fmt, docs)
 ```
 
-**Critical**: Always run `cargo test --lib` (not `cargo test`) - project uses library-only tests.
+**Critical**:
+
+- Always run `cargo test --lib` (not `cargo test`) - project uses library-only tests
+- **Always run `.\validate.ps1` before considering work complete** - this is the authoritative pre-commit check
+- The `testing/test.rs` creates a `batch_test` binary for manual format testing
+
+### Feature Flags
+
+Enable optional features via Cargo.toml:
+
+```toml
+[dependencies]
+butabuti = { version = "0.1.0", features = ["graphics", "parallel"] }
+# or
+butabuti = { version = "0.1.0", features = ["full"] }  # All features
+```
+
+- `graphics` - PNG export via `image` crate (adds `writers::png`)
+- `parallel` - Parallel batch processing via `rayon` (speeds up `BatchConverter`)
+- `full` - All optional features enabled
 
 ### Adding New Formats
 
@@ -100,6 +122,7 @@ cargo fmt                     # Format code
    - **Critical**: Use `pattern.add_stitch_relative()` for delta-encoded formats
    - Use `pattern.add_stitch_absolute()` for absolute coordinate formats
    - Add threads via `pattern.add_thread()` as discovered (order matters!)
+   - Extract metadata with `pattern.add_metadata(key, value)` - see DST reader for examples
 4. Export in `src/formats/io/readers.rs`: `pub mod formatname;`
 5. Add tests with real file samples from `testing/` directory
 
@@ -110,6 +133,8 @@ cargo fmt                     # Format code
 3. Write header → encode stitches → write footer
    - **Critical**: Most formats require fixed header sizes (DST=512, PES varies by version)
    - Use `WriteHelper` from `formats::io::utils` for binary writes
+   - Import: `use crate::formats::io::utils::WriteHelper;`
+   - Usage: `file.write_u16_le(value)?;` or `file.write_string_fixed("text", 16)?;`
 4. Export in `src/formats/io/writers.rs`
 5. Add round-trip test if reader exists (read → write → read → compare stitch counts)
 
