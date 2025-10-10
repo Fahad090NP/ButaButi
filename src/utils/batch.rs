@@ -15,15 +15,20 @@
 //! - **jef** - Janome JEF
 //! - **vp3** - Pfaff VP3
 //! - **pec** - Brother PEC
-//! - **json** - JSON embroidery data
-//! - **csv** - CSV embroidery data
 //! - **xxx** - Singer XXX
 //! - **u01** - Barudan U01
+//! - **tbf** - Tajima TBF
+//! - **col** - Embroidery Thread Color
+//! - **edr** - Embird Color
+//! - **inf** - Embroidery Thread Info
+//! - **gcode** - GCode embroidery data
+//! - **json** - JSON embroidery data
+//! - **csv** - CSV embroidery data
 //!
 //! ## Supported Output Formats
 //!
 //! The batch converter can export to any format supported by the writers module,
-//! including: dst, pes, jef, vp3, exp, pec, json, csv, svg, png, gcode, and more.
+//! including: dst, pes, jef, vp3, exp, pec, xxx, u01, tbf, col, edr, inf, gcode, json, csv, svg, png, txt.
 //!
 //! # Examples
 //!
@@ -657,17 +662,42 @@ fn read_embroidery_file(path: &Path) -> Result<EmbPattern> {
         "json" => readers::json::read(&mut file),
         "csv" => {
             let mut pattern = EmbPattern::new();
-            readers::csv::read(&mut file, &mut pattern).map_err(|e| Error::Parse(e.to_string()))?;
+            readers::csv::read(&mut file, &mut pattern)?;
             Ok(pattern)
         }
         "xxx" => {
             let mut pattern = EmbPattern::new();
-            readers::xxx::read(&mut file, &mut pattern).map_err(|e| Error::Parse(e.to_string()))?;
+            readers::xxx::read(&mut file, &mut pattern)?;
             Ok(pattern)
         }
         "u01" => {
             let mut pattern = EmbPattern::new();
-            readers::u01::read(&mut file, &mut pattern).map_err(|e| Error::Parse(e.to_string()))?;
+            readers::u01::read(&mut file, &mut pattern)?;
+            Ok(pattern)
+        }
+        "tbf" => {
+            let mut pattern = EmbPattern::new();
+            readers::tbf::read(&mut file, &mut pattern)?;
+            Ok(pattern)
+        }
+        "col" => {
+            let mut pattern = EmbPattern::new();
+            readers::col::read(&mut file, &mut pattern)?;
+            Ok(pattern)
+        }
+        "edr" => {
+            let mut pattern = EmbPattern::new();
+            readers::edr::read(&mut file, &mut pattern)?;
+            Ok(pattern)
+        }
+        "inf" => {
+            let mut pattern = EmbPattern::new();
+            readers::inf::read(&mut file, &mut pattern)?;
+            Ok(pattern)
+        }
+        "gcode" => {
+            let mut pattern = EmbPattern::new();
+            readers::gcode::read(&mut file, &mut pattern)?;
             Ok(pattern)
         }
         _ => Err(Error::UnsupportedFormat(format!(

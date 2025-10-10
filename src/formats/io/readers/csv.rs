@@ -6,7 +6,7 @@
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
-use anyhow::{Context, Result};
+use crate::utils::error::{Error, Result};
 use std::io::{BufRead, BufReader, Read};
 
 /// Read CSV embroidery format
@@ -21,7 +21,7 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     let reader = BufReader::new(file);
 
     for line in reader.lines() {
-        let line = line.context("Failed to read CSV line")?;
+        let line = line.map_err(Error::Io)?;
         let trimmed = line.trim();
 
         // Skip empty lines
@@ -51,10 +51,10 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                     // Stitch with coordinates
                     let x = parts[3]
                         .parse::<f64>()
-                        .context("Failed to parse X coordinate")?;
+                        .map_err(|_| Error::Parse("Failed to parse X coordinate".to_string()))?;
                     let y = parts[4]
                         .parse::<f64>()
-                        .context("Failed to parse Y coordinate")?;
+                        .map_err(|_| Error::Parse("Failed to parse Y coordinate".to_string()))?;
                     pattern.add_stitch_absolute(command, x, y);
                 } else {
                     // Command without stitching (0, 0 position)

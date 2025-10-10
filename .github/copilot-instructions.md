@@ -2,11 +2,37 @@
 
 ## Overview
 
-ButaButi is a high-performance Rust library for reading, writing, and manipulating embroidery files across 40+ formats (DST, PES, JEF, VP3, etc.). Core abstractions: `EmbPattern` (stitch sequences), `EmbThread` (colors), command constants (STITCH, JUMP, TRIM, etc.), and format-specific readers/writers.
+ButaButi is a high-performance Rust library for reading, writing, and manipulating embroidery files with full read/write support. Core abstractions: `EmbPattern` (stitch sequences), `EmbThread` (colors), command constants (STITCH, JUMP, TRIM, etc.), and format-specific readers/writers.
 
-**Project Type:** Library crate (no binary by default, optional `batch_test` bin for testing)  
+**Project Type:** Library crate (no binary)  
 **Target Users:** Embroidery software developers, digitizers, format conversion tools  
-**Key Differentiator:** Zero-copy parsing where possible, extensive format coverage (47 readers, 18 writers)
+**Key Differentiator:** Full bidirectional format support - only formats with both readers AND writers are included
+
+## Supported Formats
+
+**Embroidery Formats (14 with full read/write):**
+
+- **DST** - Tajima (most common industrial format)
+- **PES** - Brother
+- **EXP** - Melco
+- **JEF** - Janome
+- **VP3** - Pfaff
+- **PEC** - Brother
+- **XXX** - Singer
+- **U01** - Barudan
+- **TBF** - Tajima
+- **COL** - Thread color list
+- **EDR** - Embird color
+- **INF** - Thread information
+- **JSON** - JSON embroidery data
+- **CSV** - CSV embroidery data
+- **GCODE** - GCODE embroidery data
+
+**Export-Only Formats:**
+
+- **SVG** - Scalable vector graphics
+- **PNG** - Raster image (requires `graphics` feature)
+- **TXT** - Human-readable text
 
 ## Architecture
 
@@ -14,7 +40,7 @@ ButaButi is a high-performance Rust library for reading, writing, and manipulati
 
 - **`src/core/`** - Core types: `EmbPattern`, `EmbThread`, `EmbMatrix`, `Transcoder`, command constants
 - **`src/formats/io/`** - Format readers (`readers/*.rs`) and writers (`writers/*.rs`)
-- **`src/palettes/`** - Thread color palettes for specific formats (HUS, JEF, PEC, SEW, SHV)
+- **`src/palettes/`** - Thread color palettes (JEF, PEC, SEW, SHV)
 - **`src/utils/`** - Error handling (`Error`/`Result`), compression, processing utilities, batch conversion
 
 ### Key Design Patterns
@@ -94,7 +120,7 @@ cargo fmt                     # Format code
 
 - Always run `cargo test --lib` (not `cargo test`) - project uses library-only tests
 - **Always run `.\validate.ps1` before considering work complete** - this is the authoritative pre-commit check
-- The `testing/test.rs` creates a `batch_test` binary for manual format testing
+- No binary targets (library-only project)
 
 ### Feature Flags
 

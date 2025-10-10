@@ -5,7 +5,7 @@
 
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
-use anyhow::{Context, Result};
+use crate::utils::error::{Error, Result};
 use std::io::Read;
 
 /// Read EDR (Embird Color) format
@@ -32,7 +32,7 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                 break;
             }
             Err(e) => {
-                return Err(e).context("Failed to read EDR thread data");
+                return Err(Error::Io(e));
             }
         }
     }

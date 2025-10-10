@@ -5,7 +5,7 @@
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
-use anyhow::Result;
+use crate::utils::error::Result;
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use std::io::Read;
 

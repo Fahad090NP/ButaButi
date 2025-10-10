@@ -3,7 +3,7 @@ name = "butabuti"
 version = "0.1.0"
 edition = "2021"
 authors = ["Fahad Iftikhar <fahad090np@gmail.com>"]
-description = "High-performance Rust library for reading, writing, and manipulating 40+ embroidery file formats"
+description = "High-performance Rust library for reading, writing, and manipulating embroidery files with full read/write support for 15 formats"
 license = "MIT"
 repository = "https://github.com/Fahad090NP/ButaButi"
 documentation = "https://github.com/Fahad090NP/ButaButi/wiki"
@@ -55,7 +55,3 @@ codegen-units = 1
 
 [profile.bench]
 opt-level = 3
-
-[[bin]]
-name = "batch_test"
-path = "testing/test.rs"

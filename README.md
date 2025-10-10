@@ -5,16 +5,16 @@
 
 > **Note:** This project is in early stage development. Features and APIs may change. Contributions are welcome!
 
-A high-performance Rust library for reading, writing, and manipulating embroidery machine files. ButaButi supports 40+ embroidery file formats with powerful batch conversion and pattern manipulation tools.
+A high-performance Rust library for reading, writing, and manipulating embroidery machine files. ButaButi supports 15 embroidery file formats with full read/write support, plus additional export formats.
 
 ## Features
 
-- **40+ Format Support** - Read from 47 formats, write to 18 formats
+- **15 Embroidery Formats** - Full bidirectional support (read & write)
+- **Export Formats** - SVG, PNG, TXT for visualization
 - **Batch Processing** - Convert multiple files with parallel processing
 - **Pattern Manipulation** - Scale, rotate, translate, and transform designs
 - **Thread Management** - Comprehensive color handling with 140+ named colors
 - **Type Safety** - Leverage Rust's type system for correctness
-- **Export Options** - PNG, SVG, JSON, CSV, and text formats
 
 ## Quick Start
 
@@ -67,17 +67,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Supported Formats
 
-### Read Support (47 formats)
+### Read & Write Support (15 formats)
 
-**Major Formats:** DST, PES, JEF, VP3, EXP, XXX, U01, HUS, SEW, SHV, PEC, JSON, CSV
+**Major Machine Formats:** DST (Tajima), PES (Brother), JEF (Janome), VP3 (Pfaff), EXP (Melco), PEC (Brother), XXX (Singer), U01 (Barudan), TBF (Tajima)
 
-**Additional:** BRO, COL, DAT, DSB, DSZ, EDR, EMD, EXY, FXY, GCode, GT, INB, INF, JPX, KSM, MAX, MIT, NEW, PCD, PCM, PCQ, PCS, PHB, PHC, PMV, SPX, STC, STX, TAP, TBF, VIP, ZHS, ZXY, and more
+**Data Formats:** JSON, CSV, GCode, COL (color list), EDR (Embird color), INF (thread info)
 
-### Write Support (18 formats)
+### Export-Only Formats
 
-**Machine Formats:** DST, PES, JEF, VP3, EXP, XXX, U01, PEC
-
-**Export Formats:** SVG, PNG, JSON, CSV, TXT, GCode, COL, EDR, INF, TBF
+**Visualization:** SVG (vector graphics), PNG (raster image - requires `graphics` feature), TXT (human-readable)
 
 ## Documentation
 
