@@ -87,9 +87,13 @@ pub fn interpolate_trims(pattern: &mut EmbPattern, max_jump_length: f64) {
                 let dy = stitch.y - prev.y;
                 let distance = (dx * dx + dy * dy).sqrt();
 
-                if distance > max_jump_length {
+                if distance > max_jump_length && distance > 0.0 {
                     // Add intermediate jumps
                     let num_segments = (distance / max_jump_length).ceil() as usize;
+
+                    // Guard against excessive segmentation or division by zero
+                    let num_segments = num_segments.clamp(1, 1000);
+
                     let step_x = dx / num_segments as f64;
                     let step_y = dy / num_segments as f64;
 
@@ -190,7 +194,12 @@ pub fn calculate_stats(pattern: &EmbPattern) -> PatternStats {
             let prev = &stitches[i - 1];
             let dx = stitch.x - prev.x;
             let dy = stitch.y - prev.y;
-            total_length += (dx * dx + dy * dy).sqrt() * 0.1; // Convert to mm (assuming 0.1mm units)
+            let segment_length = (dx * dx + dy * dy).sqrt();
+
+            // Guard against NaN and infinity
+            if segment_length.is_finite() && segment_length >= 0.0 {
+                total_length += segment_length * 0.1; // Convert to mm (assuming 0.1mm units)
+            }
         }
     }
 

@@ -6,8 +6,8 @@
 use crate::core::constants::*;
 use crate::core::encoder::{EncoderSettings, Transcoder};
 use crate::core::pattern::EmbPattern;
+use crate::utils::error::Result;
 use crate::utils::functions::decode_embroidery_command;
-use anyhow::Result;
 use std::io::{Seek, Write};
 
 /// Get default encoder settings for TBF format

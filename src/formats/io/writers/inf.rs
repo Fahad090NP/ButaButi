@@ -4,7 +4,7 @@
 //! descriptions, and chart references. Thread-only format with no stitch data.
 
 use crate::core::pattern::EmbPattern;
-use anyhow::Result;
+use crate::utils::error::Result;
 use byteorder::{BigEndian, WriteBytesExt};
 use std::io::{Seek, SeekFrom, Write};
 

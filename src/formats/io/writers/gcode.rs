@@ -6,8 +6,8 @@
 use crate::core::constants::*;
 use crate::core::encoder::EncoderSettings;
 use crate::core::pattern::EmbPattern;
+use crate::utils::error::Result;
 use crate::utils::functions::decode_embroidery_command;
-use anyhow::Result;
 use std::io::Write;
 
 /// Get default encoder settings for G-code format
@@ -120,22 +120,6 @@ fn write_header(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
     }
 
     Ok(())
-}
-
-/// Get human-readable name for command
-fn command_name(cmd: u32) -> &'static str {
-    match cmd {
-        STITCH => "STITCH",
-        JUMP => "JUMP",
-        TRIM => "TRIM",
-        COLOR_CHANGE => "COLOR_CHANGE",
-        NEEDLE_SET => "NEEDLE_SET",
-        STOP => "STOP",
-        END => "END",
-        SEQUIN_MODE => "SEQUIN_MODE",
-        SEQUIN_EJECT => "SEQUIN_EJECT",
-        _ => "UNKNOWN",
-    }
 }
 
 /// Write metadata as comments

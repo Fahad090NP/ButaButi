@@ -4,7 +4,7 @@
 //! path elements for stitches, and proper viewBox for web and print use.
 
 use crate::core::pattern::EmbPattern;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::Write;
 
 /// Write SVG (Scalable Vector Graphics) format

@@ -6,7 +6,12 @@ authors = ["ButaButi Contributors"]
 description = "High-performance Rust library for reading, writing, and manipulating embroidery files"
 license = "MIT"
 repository = "https://github.com/Fahad090NP/ButaButi"
-keywords = ["machine embroidery", "embroidery formats", "embroidery parser", "embroidery writer"]
+keywords = [
+    "machine embroidery",
+    "embroidery formats",
+    "embroidery parser",
+    "embroidery writer",
+]
 categories = ["parser-implementations", "encoding"]
 readme = "README.md"
 
@@ -54,3 +59,7 @@ codegen-units = 1
 
 [profile.bench]
 opt-level = 3
+
+[[bin]]
+name = "batch_test"
+path = "testing/test.rs"

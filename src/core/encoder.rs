@@ -1,4 +1,4 @@
-﻿//! Pattern encoding and transcoding
+//! Pattern encoding and transcoding
 //!
 //! This module provides functionality to encode patterns for writing to files,
 //! applying transformations, and handling various contingencies.
@@ -178,7 +178,14 @@ impl Transcoder {
         let dy = target_y - *current_y;
         let distance = (dx * dx + dy * dy).sqrt();
 
-        if distance > self.settings.max_stitch {
+        // Guard against NaN and infinity
+        if !distance.is_finite() {
+            *current_x = target_x;
+            *current_y = target_y;
+            return Ok(());
+        }
+
+        if distance > self.settings.max_stitch && distance > 0.0 {
             // Long stitch - apply contingency
             match self.settings.long_stitch_contingency {
                 CONTINGENCY_LONG_STITCH_JUMP_NEEDLE => {
@@ -217,7 +224,14 @@ impl Transcoder {
         let dy = target_y - *current_y;
         let distance = (dx * dx + dy * dy).sqrt();
 
-        if distance > self.settings.max_jump {
+        // Guard against NaN and infinity
+        if !distance.is_finite() {
+            *current_x = target_x;
+            *current_y = target_y;
+            return Ok(());
+        }
+
+        if distance > self.settings.max_jump && distance > 0.0 {
             // Jump is too long - break it into smaller jumps
             let steps = (distance / self.settings.max_jump).ceil() as usize;
             let step_x = dx / steps as f64;
@@ -250,7 +264,17 @@ impl Transcoder {
         let dy = target_y - *current_y;
         let distance = (dx * dx + dy * dy).sqrt();
 
+        // Guard against NaN, infinity, and division by zero
+        if !distance.is_finite() || distance == 0.0 || self.settings.max_stitch <= 0.0 {
+            destination.add_stitch_absolute(STITCH, target_x, target_y);
+            *current_x = target_x;
+            *current_y = target_y;
+            return Ok(());
+        }
+
         let steps = (distance / self.settings.max_stitch).ceil() as usize;
+        let steps = steps.clamp(1, 10000); // Prevent excessive loops
+
         if steps <= 1 {
             destination.add_stitch_absolute(STITCH, target_x, target_y);
         } else {

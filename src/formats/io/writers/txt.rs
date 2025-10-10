@@ -7,7 +7,7 @@
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::Write;
 
 /// Settings for TXT writer

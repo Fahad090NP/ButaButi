@@ -122,84 +122,84 @@ impl<W: Write> WriteHelper<W> {
     /// Write bytes
     pub fn write_bytes(&mut self, data: &[u8]) -> io::Result<()> {
         self.writer.write_all(data)?;
-        self.bytes_written += data.len();
+        self.bytes_written = self.bytes_written.saturating_add(data.len());
         Ok(())
     }
 
     /// Write a single byte
     pub fn write_u8(&mut self, value: u8) -> io::Result<()> {
         self.writer.write_u8(value)?;
-        self.bytes_written += 1;
+        self.bytes_written = self.bytes_written.saturating_add(1);
         Ok(())
     }
 
     /// Write i8
     pub fn write_i8(&mut self, value: i8) -> io::Result<()> {
         self.writer.write_i8(value)?;
-        self.bytes_written += 1;
+        self.bytes_written = self.bytes_written.saturating_add(1);
         Ok(())
     }
 
     /// Write u16 little endian
     pub fn write_u16_le(&mut self, value: u16) -> io::Result<()> {
         self.writer.write_u16::<LittleEndian>(value)?;
-        self.bytes_written += 2;
+        self.bytes_written = self.bytes_written.saturating_add(2);
         Ok(())
     }
 
     /// Write u16 big endian
     pub fn write_u16_be(&mut self, value: u16) -> io::Result<()> {
         self.writer.write_u16::<BigEndian>(value)?;
-        self.bytes_written += 2;
+        self.bytes_written = self.bytes_written.saturating_add(2);
         Ok(())
     }
 
     /// Write i16 little endian
     pub fn write_i16_le(&mut self, value: i16) -> io::Result<()> {
         self.writer.write_i16::<LittleEndian>(value)?;
-        self.bytes_written += 2;
+        self.bytes_written = self.bytes_written.saturating_add(2);
         Ok(())
     }
 
     /// Write i16 big endian
     pub fn write_i16_be(&mut self, value: i16) -> io::Result<()> {
         self.writer.write_i16::<BigEndian>(value)?;
-        self.bytes_written += 2;
+        self.bytes_written = self.bytes_written.saturating_add(2);
         Ok(())
     }
 
     /// Write u32 little endian
     pub fn write_u32_le(&mut self, value: u32) -> io::Result<()> {
         self.writer.write_u32::<LittleEndian>(value)?;
-        self.bytes_written += 4;
+        self.bytes_written = self.bytes_written.saturating_add(4);
         Ok(())
     }
 
     /// Write u32 big endian
     pub fn write_u32_be(&mut self, value: u32) -> io::Result<()> {
         self.writer.write_u32::<BigEndian>(value)?;
-        self.bytes_written += 4;
+        self.bytes_written = self.bytes_written.saturating_add(4);
         Ok(())
     }
 
     /// Write i32 little endian
     pub fn write_i32_le(&mut self, value: i32) -> io::Result<()> {
         self.writer.write_i32::<LittleEndian>(value)?;
-        self.bytes_written += 4;
+        self.bytes_written = self.bytes_written.saturating_add(4);
         Ok(())
     }
 
     /// Write i32 big endian
     pub fn write_i32_be(&mut self, value: i32) -> io::Result<()> {
         self.writer.write_i32::<BigEndian>(value)?;
-        self.bytes_written += 4;
+        self.bytes_written = self.bytes_written.saturating_add(4);
         Ok(())
     }
 
     /// Write f32 little endian
     pub fn write_f32_le(&mut self, value: f32) -> io::Result<()> {
         self.writer.write_f32::<LittleEndian>(value)?;
-        self.bytes_written += 4;
+        self.bytes_written = self.bytes_written.saturating_add(4);
         Ok(())
     }
 
@@ -207,14 +207,14 @@ impl<W: Write> WriteHelper<W> {
     pub fn write_i24_le(&mut self, value: i32) -> io::Result<()> {
         let bytes = value.to_le_bytes();
         self.writer.write_all(&bytes[0..3])?;
-        self.bytes_written += 3;
+        self.bytes_written = self.bytes_written.saturating_add(3);
         Ok(())
     }
 
     /// Write string as bytes
     pub fn write_string(&mut self, s: &str) -> io::Result<()> {
         self.writer.write_all(s.as_bytes())?;
-        self.bytes_written += s.len();
+        self.bytes_written = self.bytes_written.saturating_add(s.len());
         Ok(())
     }
 
@@ -225,14 +225,21 @@ impl<W: Write> WriteHelper<W> {
 
     /// Write null-terminated string with padding
     pub fn write_cstring(&mut self, s: &str, length: usize) -> io::Result<()> {
-        let bytes = s.as_bytes();
-        let len = bytes.len().min(length - 1);
-        self.writer.write_all(&bytes[..len])?;
-        // Pad with zeros
-        for _ in len..length {
-            self.write_u8(0)?;
+        if length == 0 {
+            return Ok(());
         }
-        self.bytes_written += length;
+
+        let bytes = s.as_bytes();
+        let len = bytes.len().min(length.saturating_sub(1));
+        self.writer.write_all(&bytes[..len])?;
+
+        // Pad with zeros
+        let padding = length.saturating_sub(len);
+        for _ in 0..padding {
+            self.writer.write_u8(0)?;
+        }
+
+        self.bytes_written = self.bytes_written.saturating_add(length);
         Ok(())
     }
 

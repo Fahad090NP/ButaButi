@@ -158,18 +158,26 @@ impl EmbPattern {
         let mut max_y = f64::NEG_INFINITY;
 
         for stitch in &self.stitches {
-            if stitch.x < min_x {
-                min_x = stitch.x;
+            // Only consider finite coordinates
+            if stitch.x.is_finite() && stitch.y.is_finite() {
+                if stitch.x < min_x {
+                    min_x = stitch.x;
+                }
+                if stitch.x > max_x {
+                    max_x = stitch.x;
+                }
+                if stitch.y < min_y {
+                    min_y = stitch.y;
+                }
+                if stitch.y > max_y {
+                    max_y = stitch.y;
+                }
             }
-            if stitch.x > max_x {
-                max_x = stitch.x;
-            }
-            if stitch.y < min_y {
-                min_y = stitch.y;
-            }
-            if stitch.y > max_y {
-                max_y = stitch.y;
-            }
+        }
+
+        // If all coordinates were non-finite, return zeros
+        if !min_x.is_finite() {
+            return (0.0, 0.0, 0.0, 0.0);
         }
 
         (min_x, min_y, max_x, max_y)
@@ -177,6 +185,11 @@ impl EmbPattern {
 
     /// Translate pattern by given offset
     pub fn translate(&mut self, dx: f64, dy: f64) {
+        // Guard against non-finite translations
+        if !dx.is_finite() || !dy.is_finite() {
+            return;
+        }
+
         for stitch in &mut self.stitches {
             stitch.x += dx;
             stitch.y += dy;

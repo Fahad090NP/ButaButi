@@ -5,7 +5,8 @@
 
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
-use std::io::{Result, Write};
+use crate::utils::error::Result;
+use std::io::Write;
 
 /// PNG writer settings
 #[derive(Debug, Clone)]
@@ -40,7 +41,8 @@ pub fn write(pattern: &EmbPattern, file: &mut impl Write, settings: &PngSettings
     if pattern.stitches().is_empty() {
         // Empty pattern - write minimal valid PNG
         let empty_png = create_png(&[255, 255, 255, 255], 1, 1);
-        return file.write_all(&empty_png);
+        file.write_all(&empty_png)?;
+        return Ok(());
     }
 
     let width = ((max_x - min_x) as usize) + 3;
@@ -87,7 +89,8 @@ pub fn write(pattern: &EmbPattern, file: &mut impl Write, settings: &PngSettings
 
     // Encode as PNG and write
     let png_data = create_png(&buffer.buf, buffer.width, buffer.height);
-    file.write_all(&png_data)
+    file.write_all(&png_data)?;
+    Ok(())
 }
 
 /// PNG image buffer with anti-aliased drawing

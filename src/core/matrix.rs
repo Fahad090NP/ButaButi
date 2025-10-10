@@ -145,6 +145,8 @@ impl EmbMatrix {
     }
 
     /// Compute the inverse of this matrix
+    ///
+    /// Note: If the matrix is singular (determinant is 0), this will leave the matrix unchanged
     pub fn inverse(&mut self) {
         let m = &self.m;
 
@@ -155,6 +157,14 @@ impl EmbMatrix {
 
         // Calculate determinant using first row expansion
         let det = m[0] * m48s75 + m[1] * m38s56 + m[2] * m37s46;
+
+        // Guard against singular matrices (determinant near zero) and non-finite values
+        const EPSILON: f64 = 1e-10;
+        if det.abs() < EPSILON || !det.is_finite() {
+            // Matrix is singular or invalid, cannot invert - leave unchanged
+            return;
+        }
+
         let inverse_det = 1.0 / det;
 
         // Build inverse matrix using cofactor method

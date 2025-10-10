@@ -6,7 +6,7 @@
 use crate::core::constants::*;
 use crate::core::encoder::{EncoderSettings, Transcoder};
 use crate::core::pattern::EmbPattern;
-use anyhow::Result;
+use crate::utils::error::Result;
 use byteorder::{LittleEndian, WriteBytesExt};
 use std::io::{Seek, Write};
 

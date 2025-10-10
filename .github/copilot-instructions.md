@@ -127,11 +127,8 @@ Err(Error::Parse(format!("Invalid header size: expected 512, got {}", size)))
 
 `EmbThread::from_string()` accepts hex or named colors:
 
-```rust
-EmbThread::from_string("red")?          // Named color
-EmbThread::from_string("#FF0000")?    // Hex with #
-EmbThread::from_string("ff0000")?       // Hex without #
-```
+- `EmbThread::from_string("red")?` - Named color
+- `EmbThread::from_string("FF0000")?` - Hex color (with or without # prefix)
 
 ### Pattern Transformations
 
@@ -154,7 +151,7 @@ For simple transforms, use pattern methods: `translate()`, `move_center_to_origi
 
 ## Testing Requirements
 
-- All new features need unit tests in `#[cfg(test)]` modules
+- All new features need unit tests in cfg(test) modules
 - Test edge cases: empty patterns, single stitch, invalid data
 - Format readers: test with real file samples from `examples/` or fixtures
 - Round-trip tests: read → write → read → compare
@@ -204,7 +201,7 @@ let color_changes = pattern.count_color_changes();
 - **Run tests after every change**: `cargo test --lib` must pass with 0 failures
 - **Fix clippy warnings**: `cargo clippy -- -D warnings` must produce zero warnings
 - **Format code**: Run `cargo fmt` before committing
-- **Write unit tests**: Every new function/feature needs `#[cfg(test)]` module tests
+- **Write unit tests**: Every new function/feature needs cfg(test) module tests
 - **Use builder patterns**: For complex configuration (see `BatchConverter`, `MultiFormatExporter`)
 - **Handle errors gracefully**: Use `Result<T>` and proper error messages, never `panic!()` in library code
 - **Document public APIs**: Add doc comments (`///`) for all public functions, structs, and methods

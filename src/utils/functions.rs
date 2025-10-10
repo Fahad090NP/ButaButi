@@ -77,32 +77,29 @@ pub fn decode_embroidery_command(command: u32) -> (u32, Option<u8>, Option<u8>, 
 
     // Extract and decode thread (subtract 1 since we added 1 during encoding)
     let thread = {
-        let mut t = ((command & THREAD_MASK) >> 8) as i32;
-        t -= 1;
-        if t == -1 {
+        let t = ((command & THREAD_MASK) >> 8) as u8;
+        if t == 0 {
             None
         } else {
-            Some(t as u8)
+            Some(t.saturating_sub(1))
         }
     };
 
     let needle = {
-        let mut n = ((command & NEEDLE_MASK) >> 16) as i32;
-        n -= 1;
-        if n == -1 {
+        let n = ((command & NEEDLE_MASK) >> 16) as u8;
+        if n == 0 {
             None
         } else {
-            Some(n as u8)
+            Some(n.saturating_sub(1))
         }
     };
 
     let order = {
-        let mut o = ((command & ORDER_MASK) >> 24) as i32;
-        o -= 1;
-        if o == -1 {
+        let o = ((command & ORDER_MASK) >> 24) as u8;
+        if o == 0 {
             None
         } else {
-            Some(o as u8)
+            Some(o.saturating_sub(1))
         }
     };
 

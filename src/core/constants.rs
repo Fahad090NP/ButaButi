@@ -200,6 +200,21 @@ pub fn command_name(command: u32) -> &'static str {
     }
 }
 
+/// Check if a command is valid (within the defined range)
+#[inline]
+pub fn is_valid_command(command: u32) -> bool {
+    let cmd = command & COMMAND_MASK;
+    // Allow all values as formats may define custom commands
+    // Just ensure it's within u8 range for the command byte
+    cmd <= 0xFF
+}
+
+/// Extract the core command from a full command value
+#[inline]
+pub fn extract_command(command: u32) -> u32 {
+    command & COMMAND_MASK
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,5 +230,18 @@ mod tests {
         assert_eq!(command_name(STITCH), "STITCH");
         assert_eq!(command_name(JUMP), "JUMP");
         assert_eq!(command_name(TRIM), "TRIM");
+    }
+
+    #[test]
+    fn test_is_valid_command() {
+        assert!(is_valid_command(STITCH));
+        assert!(is_valid_command(0xFF));
+        assert!(is_valid_command(0x12345678)); // Upper bits don't affect validity
+    }
+
+    #[test]
+    fn test_extract_command() {
+        assert_eq!(extract_command(0x12345678), 0x78);
+        assert_eq!(extract_command(STITCH), STITCH);
     }
 }

@@ -62,16 +62,39 @@ impl Huffman {
         }
 
         // Build lookup table for fast Huffman decoding
-        self.table_width = *self.lengths.iter().max().unwrap();
-        let table_size = 1 << self.table_width;
-        self.table = Vec::with_capacity(table_size);
+        let max_length = *self.lengths.iter().max().unwrap_or(&0);
+
+        // Guard against excessive table width (max 16 bits for u16 lookup)
+        self.table_width = max_length.min(16);
+
+        if self.table_width == 0 {
+            return;
+        }
+
+        let table_size = 1usize.checked_shl(self.table_width as u32).unwrap_or(0);
+
+        // Guard against excessive memory allocation
+        if table_size == 0 || table_size > (1 << 16) {
+            return;
+        }
+
+        self.table = vec![0; table_size];
 
         for bit_length in 1..=self.table_width {
-            let size = 1 << (self.table_width - bit_length);
+            let size = 1usize
+                .checked_shl((self.table_width - bit_length) as u32)
+                .unwrap_or(0);
+
+            if size == 0 {
+                continue;
+            }
+
             for (len_index, &length) in self.lengths.iter().enumerate() {
                 if length == bit_length {
                     for _ in 0..size {
-                        self.table.push(len_index);
+                        if self.table.len() < self.table.capacity() {
+                            self.table.push(len_index);
+                        }
                     }
                 }
             }
@@ -82,8 +105,26 @@ impl Huffman {
         if self.table.is_empty() {
             return (self.default_value, 0);
         }
+
+        // Ensure we don't overflow the table
+        if self.table_width == 0 || self.table_width > 16 {
+            return (self.default_value, 0);
+        }
+
         let index = (byte_lookup >> (16 - self.table_width)) as usize;
+
+        // Bounds check
+        if index >= self.table.len() {
+            return (self.default_value, 0);
+        }
+
         let v = self.table[index];
+
+        // Ensure v is within bounds of lengths array
+        if v >= self.lengths.len() {
+            return (self.default_value, 0);
+        }
+
         (v, self.lengths[v])
     }
 }
@@ -109,13 +150,24 @@ impl EmbCompress {
     }
 
     fn get_bits(&self, start_pos_in_bits: usize, length: usize) -> u32 {
-        let end_pos_in_bits = start_pos_in_bits + length - 1;
+        // Guard against zero length or excessive length
+        if length == 0 || length > 32 {
+            return 0;
+        }
+
+        let end_pos_in_bits = start_pos_in_bits.saturating_add(length).saturating_sub(1);
         let start_pos_in_bytes = start_pos_in_bits / 8;
         let end_pos_in_bytes = end_pos_in_bits / 8;
 
+        // Guard against reading beyond data
+        if start_pos_in_bytes >= self.input_data.len() {
+            return 0;
+        }
+
         // Collect bytes spanning the bit range
         let mut value: u32 = 0;
-        for i in start_pos_in_bytes..=end_pos_in_bytes {
+        for i in start_pos_in_bytes..=end_pos_in_bytes.min(self.input_data.len().saturating_sub(1))
+        {
             value <<= 8;
             if i < self.input_data.len() {
                 value |= self.input_data[i] as u32;
@@ -124,7 +176,11 @@ impl EmbCompress {
 
         // Extract the exact bits requested by masking and shifting
         let unused_bits_right = (8 - (end_pos_in_bits + 1) % 8) % 8;
-        let mask = (1u32 << length) - 1;
+        let mask = if length == 32 {
+            u32::MAX
+        } else {
+            (1u32 << length) - 1
+        };
         (value >> unused_bits_right) & mask
     }
 
@@ -139,7 +195,7 @@ impl EmbCompress {
     }
 
     fn slide(&mut self, bit_count: usize) {
-        self.bit_position += bit_count;
+        self.bit_position = self.bit_position.saturating_add(bit_count);
     }
 
     fn read_variable_length(&mut self) -> usize {
@@ -250,14 +306,25 @@ impl EmbCompress {
             return 0;
         }
 
-        let v = value - 1;
+        let v = value.saturating_sub(1);
+
+        // Guard against shifting by too many bits
+        if v >= 32 {
+            return 0;
+        }
+
         let additional = self.pop(v) as usize;
-        (1 << v) + additional
+        (1usize.checked_shl(v as u32).unwrap_or(0)).saturating_add(additional)
     }
 
     fn decompress(&mut self, uncompressed_size: Option<usize>) -> Result<Vec<u8>> {
         let mut output_data = Vec::new();
-        let bits_total = self.input_data.len() * 8;
+        let bits_total = self.input_data.len().saturating_mul(8);
+
+        // Pre-allocate if we know the size
+        if let Some(size) = uncompressed_size {
+            output_data.reserve(size);
+        }
 
         while bits_total > self.bit_position {
             if let Some(size) = uncompressed_size {
@@ -276,24 +343,38 @@ impl EmbCompress {
                 break;
             } else {
                 // Lookback reference
-                let length = character - 253; // Min length is 3 (256 - 253 = 3)
-                let back = self.get_position() + 1;
+                let length = character.saturating_sub(253); // Min length is 3 (256 - 253 = 3)
+
+                // Guard against zero length
+                if length == 0 {
+                    continue;
+                }
+
+                let back = self.get_position().saturating_add(1);
                 let position = output_data.len().saturating_sub(back);
+
+                // Ensure we don't overflow
+                if back > output_data.len() {
+                    // Invalid lookback - skip this sequence
+                    continue;
+                }
 
                 if back > length {
                     // Entire lookback is already in output
-                    for i in position..position + length {
-                        if i < output_data.len() {
-                            output_data.push(output_data[i]);
-                        }
+                    let end_pos = position.saturating_add(length).min(output_data.len());
+                    for i in position..end_pos {
+                        let byte = output_data[i];
+                        output_data.push(byte);
                     }
                 } else {
                     // Will read & write overlapping data
                     for i in 0..length {
-                        let idx = position + i;
+                        let idx = position.saturating_add(i);
                         if idx < output_data.len() {
                             let byte = output_data[idx];
                             output_data.push(byte);
+                        } else {
+                            break;
                         }
                     }
                 }

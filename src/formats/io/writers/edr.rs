@@ -4,7 +4,7 @@
 //! storing thread color information in a simple binary structure.
 
 use crate::core::pattern::EmbPattern;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::Write;
 
 /// Write EDR (Embird Color) format

@@ -250,9 +250,15 @@ pub fn color_distance_components(r1: i32, g1: i32, b1: i32, r2: i32, g2: i32, b2
     let g = g1 - g2;
     let b = b1 - b2;
 
-    let result = (((512 + red_mean) * r * r) >> 8) + 4 * g * g + (((767 - red_mean) * b * b) >> 8);
+    // Use bit shifts instead of division and saturating operations
+    let r_component = ((512 + red_mean) * r * r) >> 8;
+    let g_component = 4 * g * g;
+    let b_component = ((767 - red_mean) * b * b) >> 8;
 
-    result as u32
+    // Use saturating_add to prevent overflow
+    r_component
+        .saturating_add(g_component)
+        .saturating_add(b_component) as u32
 }
 
 /// Find the nearest color in a palette
@@ -269,6 +275,11 @@ pub fn find_nearest_color_index(color: u32, palette: &[EmbThread]) -> Option<usi
         if dist < closest_distance {
             closest_distance = dist;
             closest_index = i;
+
+            // Perfect match - early exit optimization
+            if dist == 0 {
+                break;
+            }
         }
     }
 
