@@ -38,9 +38,6 @@ flamegraph.svg
 perf.data
 perf.data.old
 
-# Benchmark results
-/benches/results/
-
 # Coverage
 *.profraw
 *.profdata
