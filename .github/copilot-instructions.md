@@ -4,6 +4,10 @@
 
 ButaButi is a high-performance Rust library for reading, writing, and manipulating embroidery files across 40+ formats (DST, PES, JEF, VP3, etc.). Core abstractions: `EmbPattern` (stitch sequences), `EmbThread` (colors), command constants (STITCH, JUMP, TRIM, etc.), and format-specific readers/writers.
 
+**Project Type:** Library crate (no binary by default, optional `batch_test` bin for testing)  
+**Target Users:** Embroidery software developers, digitizers, format conversion tools  
+**Key Differentiator:** Zero-copy parsing where possible, extensive format coverage (47 readers, 18 writers)
+
 ## Architecture
 
 ### Module Structure
@@ -11,7 +15,7 @@ ButaButi is a high-performance Rust library for reading, writing, and manipulati
 - **`src/core/`** - Core types: `EmbPattern`, `EmbThread`, `EmbMatrix`, `Transcoder`, command constants
 - **`src/formats/io/`** - Format readers (`readers/*.rs`) and writers (`writers/*.rs`)
 - **`src/palettes/`** - Thread color palettes for specific formats (HUS, JEF, PEC, SEW, SHV)
-- **`src/utils/`** - Error handling (`Error`/`Result`), compression, processing utilities
+- **`src/utils/`** - Error handling (`Error`/`Result`), compression, processing utilities, batch conversion
 
 ### Key Design Patterns
 
@@ -37,10 +41,17 @@ const THREAD_MASK: u32 = 0x0000_FF00;   // Thread info in bits 8-15
 
 #### Reader/Writer Convention
 
-**Readers** mutate an existing `EmbPattern`:
+**Readers** mutate an existing `EmbPattern` (critical: pattern must be pre-initialized):
 
 ```rust
+// Most formats
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>
+
+// Formats requiring Seek (e.g., JEF, BRO, HUS) - read header/footer separately
+pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<()>
+
+// Some legacy formats have convenience wrappers
+pub fn read_file(path: &str) -> Result<EmbPattern>  // Creates pattern internally
 ```
 
 **Writers** write immutable pattern to stream:
@@ -48,6 +59,8 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>
 ```rust
 pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()>
 ```
+
+**Why mutation?** Allows reusing pattern buffers in batch processing and avoids cloning large stitch arrays.
 
 #### Pattern Building API
 
@@ -82,17 +95,23 @@ cargo fmt                     # Format code
 
 1. Create `src/formats/io/readers/formatname.rs`
 2. Implement signature: `pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>`
+   - If format needs random access (headers/footers), use `impl Read + Seek`
 3. Parse header → extract metadata → decode stitches → add to pattern
+   - **Critical**: Use `pattern.add_stitch_relative()` for delta-encoded formats
+   - Use `pattern.add_stitch_absolute()` for absolute coordinate formats
+   - Add threads via `pattern.add_thread()` as discovered (order matters!)
 4. Export in `src/formats/io/readers.rs`: `pub mod formatname;`
-5. Add tests with real file samples
+5. Add tests with real file samples from `testing/` directory
 
 #### Writer Template
 
 1. Create `src/formats/io/writers/formatname.rs`
 2. Implement: `pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()>`
 3. Write header → encode stitches → write footer
+   - **Critical**: Most formats require fixed header sizes (DST=512, PES varies by version)
+   - Use `WriteHelper` from `formats::io::utils` for binary writes
 4. Export in `src/formats/io/writers.rs`
-5. Add round-trip test if reader exists
+5. Add round-trip test if reader exists (read → write → read → compare stitch counts)
 
 ### Format-Specific Encoding
 
@@ -119,8 +138,15 @@ Use `Result<T>` from `utils/error.rs`. Never panic in library code:
 ```rust
 use crate::utils::error::{Error, Result};
 
-// Prefer descriptive error contexts
+// Prefer descriptive error contexts with format! for dynamic messages
 Err(Error::Parse(format!("Invalid header size: expected 512, got {}", size)))
+
+// Use appropriate error variants
+Error::Io(io_error)           // I/O failures (auto-converted via From trait)
+Error::Parse(msg)             // Format parsing issues
+Error::UnsupportedFormat(msg) // Format not supported
+Error::InvalidPattern(msg)    // Pattern validation failures
+Error::Encoding(msg)          // Encoding/writing errors
 ```
 
 ### Thread Color Parsing
@@ -170,19 +196,36 @@ For simple transforms, use pattern methods: `translate()`, `move_center_to_origi
 
 ```rust
 use butabuti::prelude::*;
+use std::fs::File;
+
 let mut pattern = EmbPattern::new();
+let mut file = File::open("design.dst")?;
+
 // Invoke format-specific reader from formats::io::readers
+butabuti::formats::io::readers::dst::read(&mut file, &mut pattern)?;
 ```
 
 ### Create pattern programmatically
 
 ```rust
+use butabuti::prelude::*;
+
 let mut pattern = EmbPattern::new();
 pattern.add_thread(EmbThread::from_string("red")?);
-pattern.stitch(100.0, 0.0);  // 10mm right
+pattern.stitch(100.0, 0.0);  // 10mm right (relative to previous position)
 pattern.stitch(0.0, 100.0);  // 10mm down
 pattern.trim();
 pattern.end();
+```
+
+### Write a pattern
+
+```rust
+use butabuti::prelude::*;
+use std::fs::File;
+
+let mut file = File::create("output.pes")?;
+butabuti::formats::io::writers::pes::write(&pattern, &mut file)?;
 ```
 
 ### Get pattern statistics
@@ -192,6 +235,24 @@ let (min_x, min_y, max_x, max_y) = pattern.bounds();
 let width_mm = (max_x - min_x) / 10.0;
 let stitch_count = pattern.count_stitches();
 let color_changes = pattern.count_color_changes();
+```
+
+### Batch conversion
+
+```rust
+use butabuti::prelude::*;
+
+let converter = BatchConverter::new()
+    .input_dir("input/")
+    .output_dir("output/")
+    .target_format("pes")
+    .input_extensions(&["dst", "exp"])
+    .parallel(true)
+    .overwrite(true)
+    .build();
+
+let results = converter.convert_all()?;
+results.print_summary();
 ```
 
 ## Do's and Don'ts
