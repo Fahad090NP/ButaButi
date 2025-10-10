@@ -1,4 +1,4 @@
-﻿# ButaButi TODO List
+﻿# ButaButi Todo List - Upcoming Features and Improvements
 
 ## File Format Support
 
@@ -77,7 +77,6 @@
 - [ ] Add closest thread color matching by brand
 - [ ] Add thread cost estimation
 - [ ] Add thread consumption calculator
-- [ ] Add color blending suggestions
 - [ ] Add RGB to thread color database
 - [ ] Add Pantone color matching
 - [ ] Add thread substitution recommendations
@@ -122,7 +121,6 @@
 - [ ] Add stitch statistics export (CSV, JSON)
 - [ ] Add pattern comparison tools
 - [ ] Add format compatibility checker
-- [ ] Add machine compatibility checker
 
 ## API and Usability
 
@@ -135,10 +133,7 @@
 - [x] Add multi-format export functionality
 - [ ] Add pattern preview generation
 - [ ] Add progress callbacks for long operations
-- [ ] Add error recovery mechanisms
-- [ ] Add pattern undo/redo history
 - [ ] Add pattern comparison/diff tools
-- [ ] Add plugin/extension system
 
 ## Performance
 
@@ -200,22 +195,14 @@
 ## Utilities
 
 - [ ] Add color space conversions (HSL, HSV, LAB)
-- [ ] Add Bézier curve to stitch conversion
 - [ ] Add spline to stitch conversion
 - [ ] Add polygon to stitch conversion
 - [ ] Add path simplification algorithms
 - [ ] Add noise reduction for digitized patterns
-- [ ] Add pattern watermarking
+- [ ] Add pattern watermarking (small monogram will be embroidered in a corner)
 - [ ] Add pattern metadata editor
 - [ ] Add EXIF-like metadata support
 - [ ] Add checksum/hash generation for patterns
-
-## Internationalization
-
-- [ ] Add localization support (i18n)
-- [ ] Add translations for common strings
-- [ ] Add regional thread brand preferences
-- [ ] Add locale-specific formatting
 
 ## Developer Tools
 
