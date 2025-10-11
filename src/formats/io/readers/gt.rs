@@ -5,7 +5,7 @@
 
 use crate::core::pattern::EmbPattern;
 use crate::formats::io::readers::dsz;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 /// Read GT (Gold Thread) format

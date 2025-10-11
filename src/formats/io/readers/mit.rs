@@ -5,7 +5,7 @@
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::Read;
 
 const MIT_SIZE_CONVERSION_RATIO: f64 = 2.0;

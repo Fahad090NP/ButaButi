@@ -6,7 +6,7 @@
 use crate::core::pattern::EmbPattern;
 use crate::formats::io::readers::pec;
 use crate::palettes::thread_pec::PEC_THREADS;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 /// Read PHC (Brother PHC) format

@@ -6,7 +6,7 @@
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 /// Read ZHS (Zeng Hsing) format

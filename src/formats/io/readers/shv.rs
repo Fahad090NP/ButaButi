@@ -6,7 +6,7 @@
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
 use crate::palettes::thread_shv;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 /// Read SHV (Husqvarna Viking SHV) format
@@ -73,6 +73,7 @@ fn read_shv_stitches(
     let mut current_color_index = 0usize;
     let mut max_stitches = stitch_per_color.first().copied().unwrap_or(0);
 
+    #[allow(clippy::while_let_loop)]
     loop {
         let b0 = match read_int_8(file) {
             Ok(v) => v,

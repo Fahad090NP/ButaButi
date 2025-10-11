@@ -6,7 +6,7 @@
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 const PC_SIZE_CONVERSION_RATIO: f64 = 5.0 / 3.0;
@@ -58,6 +58,7 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
     let _stitch_count = read_u16_be(file)?;
 
     // Read stitches
+    #[allow(clippy::while_let_loop)]
     loop {
         // Try to read x coordinate
         let x = match read_i24_be(file) {

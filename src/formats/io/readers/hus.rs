@@ -7,7 +7,7 @@ use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
 use crate::palettes::thread_hus;
 use crate::utils::compress;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 /// Read HUS (Husqvarna Viking) format

@@ -6,8 +6,8 @@
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
 use crate::formats::io::readers::dst;
+use crate::utils::error::Result;
 use crate::utils::functions::encode_thread_change;
-use anyhow::Result;
 use std::io::Read;
 
 /// Read DSB (Barudan B-stitch) format

@@ -5,7 +5,7 @@
 
 use crate::core::pattern::EmbPattern;
 use crate::formats::io::readers::exp;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 /// Read STX (Data Stitch) format

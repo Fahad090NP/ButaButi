@@ -5,7 +5,7 @@
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 /// Read PMV (Brother PMV) format
@@ -24,6 +24,7 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
 fn read_pmv_stitches(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     let mut px = 0.0;
 
+    #[allow(clippy::while_let_loop)]
     loop {
         let stitch_count = match read_u16_le(file) {
             Ok(v) => v,

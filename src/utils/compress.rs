@@ -3,7 +3,7 @@
 //! Implements Huffman coding used in HUS (Husqvarna Viking) format files.
 //! Provides both compression and decompression with dynamic Huffman tree building.
 
-use anyhow::Result;
+use crate::utils::error::Result;
 
 /// Expand (decompress) data using Huffman decompression
 pub fn expand(data: &[u8], uncompressed_size: Option<usize>) -> Result<Vec<u8>> {

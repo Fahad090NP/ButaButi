@@ -5,8 +5,8 @@
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
+use crate::utils::error::Result;
 use crate::utils::functions::encode_thread_change;
-use anyhow::Result;
 use std::io::{Read, Seek, SeekFrom};
 
 /// Read KSM (Pfaff) format

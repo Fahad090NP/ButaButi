@@ -5,7 +5,7 @@
 
 use crate::core::pattern::EmbPattern;
 use crate::formats::io::readers::dst;
-use anyhow::Result;
+use crate::utils::error::Result;
 use std::io::Read;
 
 /// Read TAP (Happy Embroidery Tap) format
