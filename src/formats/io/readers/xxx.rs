@@ -2,6 +2,21 @@
 //!
 //! XXX uses variable-length encoding with 2-byte normal stitches, 5-byte long stitches,
 //! and 4-byte special commands. Colors are stored at the end after all stitches.
+//!
+//! ## Format Limitations
+//! - Minimum file size: 256 bytes (header size)
+//! - Maximum 1,000 colors allowed
+//! - Maximum 1,000,000 stitches per file
+//! - Header at offset 0x00-0x100, stitches start at 0x100
+
+/// Minimum valid file size in bytes
+const MIN_FILE_SIZE: usize = 256;
+
+/// Maximum allowed color count
+const MAX_COLORS: u16 = 1000;
+
+/// Maximum allowed stitch count
+const MAX_STITCHES: usize = 1_000_000;
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
@@ -34,21 +49,49 @@ fn read_signed_i16(value: u16) -> f64 {
 ///
 /// let mut file = File::open("design.xxx").unwrap();
 /// let mut pattern = EmbPattern::new();
-/// butabuti::io::readers::xxx::read(&mut file, &mut pattern).unwrap();
+/// butabuti::formats::io::readers::xxx::read(&mut file, &mut pattern).unwrap();
 /// ```
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     // Skip to color count at offset 0x27
     let mut header = vec![0u8; 0x27];
-    file.read_exact(&mut header)?;
+    file.read_exact(&mut header).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::UnexpectedEof {
+            crate::utils::error::Error::Parse(format!(
+                "XXX file too small: minimum {} bytes required",
+                MIN_FILE_SIZE
+            ))
+        } else {
+            crate::utils::error::Error::from(e)
+        }
+    })?;
 
     let num_colors = file.read_u16::<LittleEndian>()?;
+
+    // Validate color count
+    if num_colors > MAX_COLORS {
+        return Err(crate::utils::error::Error::Parse(format!(
+            "XXX color count too large: {} (max {})",
+            num_colors, MAX_COLORS
+        )));
+    }
 
     // Skip to stitch data at offset 0x100
     let mut skip_bytes = vec![0u8; 0x100 - 0x27 - 2];
     file.read_exact(&mut skip_bytes)?;
 
     // Read stitches
+    let mut stitch_count = 0;
+
     loop {
+        // Check for excessive stitch count
+        stitch_count += 1;
+        if stitch_count > MAX_STITCHES {
+            return Err(crate::utils::error::Error::Parse(format!(
+                "XXX file exceeds maximum stitch count of {}",
+                MAX_STITCHES
+            )));
+        }
+
         let b1 = file.read_u8()?;
 
         // Long stitch/jump (0x7D or 0x7E)

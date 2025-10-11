@@ -2,6 +2,14 @@
 //!
 //! PES is Brother's main embroidery format supporting multiple versions (1-6+).
 //! Contains an embedded PEC section for machine compatibility and design metadata.
+//!
+//! ## Format Limitations
+//! - PEC block offset must be within 0-100MB range (100,000,000 bytes)
+//! - Supports versions 1-10 (#PES0001 through #PES0100)
+//! - All PES files contain an embedded PEC section starting at specified offset
+
+/// Maximum allowed PEC block position in bytes (100MB)
+const MAX_PEC_OFFSET: i32 = 100_000_000;
 
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
@@ -189,55 +197,99 @@ fn read_pes_header_version_6<R: Read>(
     Ok(())
 }
 
-/// Read a PES file
-pub fn read<R: Read + Seek>(reader: &mut R) -> Result<EmbPattern> {
-    let mut pattern = EmbPattern::new();
-    let mut helper = ReadHelper::new(reader);
+/// Read PES (Brother PES) format
+///
+/// Reads a PES embroidery file into the provided pattern.
+/// PES files contain an embedded PEC section for machine compatibility.
+///
+/// # Arguments
+///
+/// * `file` - The input stream to read from (must support Seek for PEC block access)
+/// * `pattern` - The pattern to populate with stitches and metadata
+///
+/// # Example
+///
+/// ```no_run
+/// use butabuti::core::pattern::EmbPattern;
+/// use butabuti::formats::io::readers::pes;
+/// use std::fs::File;
+///
+/// let mut file = File::open("design.pes")?;
+/// let mut pattern = EmbPattern::new();
+/// pes::read(&mut file, &mut pattern)?;
+/// # Ok::<(), butabuti::utils::error::Error>(())
+/// ```
+pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<()> {
+    let mut helper = ReadHelper::new(file);
     let mut loaded_thread_values = Vec::new();
 
-    // Read PES header string
-    let pes_string = helper.read_string(8)?;
+    // Read PES header string (8 bytes)
+    let pes_string = helper.read_string(8).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::UnexpectedEof {
+            crate::utils::error::Error::Parse(
+                "PES file too small: header must be at least 8 bytes".to_string(),
+            )
+        } else {
+            crate::utils::error::Error::from(e)
+        }
+    })?;
+
+    // Validate PES/PEC magic bytes
+    if !pes_string.starts_with("#PES") && !pes_string.starts_with("#PEC") {
+        return Err(crate::utils::error::Error::Parse(format!(
+            "Invalid PES/PEC header: expected '#PES' or '#PEC', got '{}'",
+            pes_string
+        )));
+    }
 
     // Check if it's actually a standalone PEC file
     if pes_string == "#PEC0001" {
         let mut reader = helper.into_inner();
-        pec::read_pec(&mut reader, &mut pattern, None)?;
+        pec::read_pec(&mut reader, pattern, None)?;
         pattern.interpolate_duplicate_color_as_stop();
-        return Ok(pattern);
+        return Ok(());
     }
 
     // Read PEC block position
     let pec_block_position = helper.read_i32_le()?;
 
+    // Validate PEC block position is reasonable
+    if !(0..=MAX_PEC_OFFSET).contains(&pec_block_position) {
+        return Err(crate::utils::error::Error::Parse(format!(
+            "Invalid PEC block position: {} (must be between 0 and {})",
+            pec_block_position, MAX_PEC_OFFSET
+        )));
+    }
+
     // Parse version and read appropriate header
     match pes_string.as_str() {
         "#PES0100" => {
             pattern.add_metadata("version", "10");
-            read_pes_header_version_6(&mut helper, &mut pattern, &mut loaded_thread_values)?;
+            read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
         }
         "#PES0090" => {
             pattern.add_metadata("version", "9");
-            read_pes_header_version_6(&mut helper, &mut pattern, &mut loaded_thread_values)?;
+            read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
         }
         "#PES0080" => {
             pattern.add_metadata("version", "8");
-            read_pes_header_version_6(&mut helper, &mut pattern, &mut loaded_thread_values)?;
+            read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
         }
         "#PES0070" => {
             pattern.add_metadata("version", "7");
-            read_pes_header_version_6(&mut helper, &mut pattern, &mut loaded_thread_values)?;
+            read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
         }
         "#PES0060" => {
             pattern.add_metadata("version", "6");
-            read_pes_header_version_6(&mut helper, &mut pattern, &mut loaded_thread_values)?;
+            read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
         }
         "#PES0050" | "#PES0055" | "#PES0056" => {
             pattern.add_metadata("version", "5");
-            read_pes_header_version_5(&mut helper, &mut pattern, &mut loaded_thread_values)?;
+            read_pes_header_version_5(&mut helper, pattern, &mut loaded_thread_values)?;
         }
         "#PES0040" => {
             pattern.add_metadata("version", "4");
-            read_pes_header_version_4(&mut helper, &mut pattern)?;
+            read_pes_header_version_4(&mut helper, pattern)?;
         }
         "#PES0030" => {
             pattern.add_metadata("version", "3");
@@ -250,7 +302,7 @@ pub fn read<R: Read + Seek>(reader: &mut R) -> Result<EmbPattern> {
         }
         "#PES0001" => {
             pattern.add_metadata("version", "1");
-            read_pes_header_version_1(&mut helper, &mut pattern)?;
+            read_pes_header_version_1(&mut helper, pattern)?;
         }
         _ => {
             // Unknown version, skip header
@@ -261,17 +313,30 @@ pub fn read<R: Read + Seek>(reader: &mut R) -> Result<EmbPattern> {
     let mut reader = helper.into_inner();
     reader.seek(SeekFrom::Start(pec_block_position as u64))?;
 
-    pec::read_pec(&mut reader, &mut pattern, Some(&mut loaded_thread_values))?;
+    pec::read_pec(&mut reader, pattern, Some(&mut loaded_thread_values))?;
     pattern.interpolate_duplicate_color_as_stop();
 
-    Ok(pattern)
+    Ok(())
 }
 
 /// Read a PES file from path
+///
+/// Convenience function to read a PES file directly from a file path.
+///
+/// # Example
+///
+/// ```no_run
+/// use butabuti::formats::io::readers::pes;
+///
+/// let pattern = pes::read_file("design.pes")?;
+/// # Ok::<(), butabuti::utils::error::Error>(())
+/// ```
 pub fn read_file(path: &str) -> Result<EmbPattern> {
     let file = std::fs::File::open(path)?;
     let mut reader = std::io::BufReader::new(file);
-    read(&mut reader)
+    let mut pattern = EmbPattern::new();
+    read(&mut reader, &mut pattern)?;
+    Ok(pattern)
 }
 
 #[cfg(test)]

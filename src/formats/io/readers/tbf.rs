@@ -2,6 +2,32 @@
 //!
 //! TBF is a Tajima binary format with ASCII header (0x00-0x5FF), thread definitions,
 //! and 3-byte stitch encoding. Supports explicit trim commands for industrial machines.
+//!
+//! ## Format Limitations
+//! - Fixed header structure: name at 0x83 (16 bytes), thread order at 0x10A (256 bytes)
+//! - Thread definitions start at 0x20E (marker 0x45 + RGB + 0x20 per thread)
+//! - Stitch data starts at 0x600 (1536 bytes offset)
+//! - Maximum 256 needles supported (thread order array size)
+//! - Maximum 1,000,000 stitches per file
+//! - 3-byte stitch encoding: x, y, control byte
+
+/// TBF stitch data offset
+const STITCH_DATA_OFFSET: u64 = 0x600;
+
+/// TBF name offset
+const NAME_OFFSET: u64 = 0x83;
+
+/// TBF thread order offset
+const THREAD_ORDER_OFFSET: u64 = 0x10A;
+
+/// TBF thread definition offset
+const THREAD_DEF_OFFSET: u64 = 0x20E;
+
+/// Maximum allowed stitch count
+const MAX_STITCHES: usize = 1_000_000;
+
+/// Maximum allowed thread/needle count
+const MAX_THREADS: usize = 256;
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
@@ -30,11 +56,11 @@ fn read_signed_i8(value: u8) -> f64 {
 ///
 /// let mut file = File::open("design.tbf").unwrap();
 /// let mut pattern = EmbPattern::new();
-/// butabuti::io::readers::tbf::read(&mut file, &mut pattern).unwrap();
+/// butabuti::formats::io::readers::tbf::read(&mut file, &mut pattern).unwrap();
 /// ```
 pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<()> {
     // Read name at offset 0x83 (16 bytes)
-    file.seek(SeekFrom::Start(0x83))?;
+    file.seek(SeekFrom::Start(NAME_OFFSET))?;
     let mut name_bytes = [0u8; 16];
     file.read_exact(&mut name_bytes)?;
     if let Ok(name) = std::str::from_utf8(&name_bytes) {
@@ -45,15 +71,25 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
     }
 
     // Read thread order at offset 0x10A (256 bytes)
-    file.seek(SeekFrom::Start(0x10A))?;
+    file.seek(SeekFrom::Start(THREAD_ORDER_OFFSET))?;
     let mut thread_order = [0u8; 256];
     file.read_exact(&mut thread_order)?;
 
     // Read thread definitions at offset 0x20E
-    file.seek(SeekFrom::Start(0x20E))?;
+    file.seek(SeekFrom::Start(THREAD_DEF_OFFSET))?;
+    let mut thread_count = 0;
     loop {
         let marker = file.read_u8()?;
         if marker == 0x45 {
+            // Validate thread count
+            thread_count += 1;
+            if thread_count > MAX_THREADS {
+                return Err(crate::utils::error::Error::Parse(format!(
+                    "TBF file exceeds maximum thread count of {}",
+                    MAX_THREADS
+                )));
+            }
+
             // Thread definition: 0x45 + R + G + B + 0x20
             let r = file.read_u8()?;
             let g = file.read_u8()?;
@@ -68,13 +104,23 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
     }
 
     // Read stitch data starting at 0x600
-    file.seek(SeekFrom::Start(0x600))?;
+    file.seek(SeekFrom::Start(STITCH_DATA_OFFSET))?;
 
     let mut needle = 0;
+    let mut stitch_count = 0;
     loop {
         let mut byte = [0u8; 3];
         if file.read_exact(&mut byte).is_err() {
             break;
+        }
+
+        // Check for excessive stitch count
+        stitch_count += 1;
+        if stitch_count > MAX_STITCHES {
+            return Err(crate::utils::error::Error::Parse(format!(
+                "TBF file exceeds maximum stitch count of {}",
+                MAX_STITCHES
+            )));
         }
 
         let x = byte[0];

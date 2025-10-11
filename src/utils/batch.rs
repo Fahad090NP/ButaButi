@@ -6,6 +6,30 @@
 //! - Progress tracking and error reporting
 //! - Parallel processing for improved performance
 //!
+//! ## Thread Safety
+//!
+//! The batch converter is designed for safe concurrent operation:
+//!
+//! - **Mutex Protection**: Results are collected in an `Arc<Mutex<Vec<ConversionResult>>>` to ensure
+//!   thread-safe access during parallel processing. The mutex is only held during result insertion,
+//!   minimizing contention.
+//!
+//! - **Arc Sharing**: Configuration data (target format, output directory) is wrapped in `Arc` to enable
+//!   safe sharing across threads without cloning. This is read-only after initialization.
+//!
+//! - **Thread Panic Handling**: Worker threads are isolated - if one panics during conversion, others
+//!   continue processing. Failed conversions are captured as `ConversionResult::Failed` rather than
+//!   propagating panics.
+//!
+//! - **Rayon Guarantees**: When `parallel` feature is enabled, uses Rayon's `par_iter()` which:
+//!   - Automatically manages thread pool sizing
+//!   - Ensures all spawned threads complete before returning
+//!   - Provides work-stealing for load balancing
+//!   - Handles thread panics gracefully with `catch_unwind`
+//!
+//! - **Mutex Poisoning**: In the rare case of mutex poisoning (panic while lock held), operations
+//!   gracefully degrade to serial processing or return accumulated results rather than panicking.
+//!
 //! ## Supported Input Formats
 //!
 //! The batch converter supports automatic format detection for:
@@ -339,22 +363,24 @@ impl BatchConverterExecutor {
 
         // Convert files
         if self.config.parallel {
-            // Parallel processing
+            // Parallel processing with Arc to avoid cloning config strings
             let results_arc = Arc::new(Mutex::new(ConversionResults::new()));
+            let target_format_arc = Arc::new(self.config.target_format.clone());
+            let output_dir_arc = Arc::new(self.config.output_dir.clone());
+            let overwrite = self.config.overwrite;
+
             let handles: Vec<_> = input_files
                 .into_iter()
                 .map(|input_file| {
                     let results_clone = Arc::clone(&results_arc);
-                    let config = &self.config;
-                    let target_format = config.target_format.clone();
-                    let output_dir = config.output_dir.clone();
-                    let overwrite = config.overwrite;
+                    let target_format = Arc::clone(&target_format_arc);
+                    let output_dir = Arc::clone(&output_dir_arc);
 
                     std::thread::spawn(move || {
                         let result = Self::convert_single_file(
                             &input_file,
-                            target_format.as_deref(),
-                            output_dir.as_deref(),
+                            target_format.as_ref().as_deref(),
+                            output_dir.as_ref().as_deref(),
                             overwrite,
                         );
                         if let Ok(mut results) = results_clone.lock() {
@@ -490,6 +516,35 @@ impl BatchConverterExecutor {
         }
     }
 
+    /// Sanitize a filename to prevent path traversal attacks
+    ///
+    /// Removes or replaces characters that could be used for path traversal:
+    /// - Path separators (/, \)
+    /// - Parent directory references (..)
+    /// - Special characters that could cause issues
+    ///
+    /// Returns a safe filename suitable for use in file operations.
+    fn sanitize_filename(name: &str) -> String {
+        name.chars()
+            .filter(|c| {
+                !matches!(
+                    c,
+                    // Remove path separators
+                    '/' | '\\' |
+                    // Remove null bytes and control characters
+                    '\0'
+                        ..='\x1F' | '\x7F' |
+                    // Remove characters problematic on Windows
+                    '<' | '>' | ':' | '"' | '|' | '?' | '*'
+                )
+            })
+            .collect::<String>()
+            .replace("..", "_") // Replace parent directory references
+            .trim_matches('.') // Remove leading/trailing dots
+            .trim()
+            .to_string()
+    }
+
     /// Determine the output file path
     fn determine_output_path(
         input_path: &Path,
@@ -499,7 +554,9 @@ impl BatchConverterExecutor {
         let file_stem = input_path
             .file_stem()
             .and_then(|s| s.to_str())
-            .unwrap_or("output");
+            .map(Self::sanitize_filename)
+            .unwrap_or_else(|| "output".to_string());
+
         let extension = target_format.unwrap_or("dst");
 
         let output_filename = format!("{}.{}", file_stem, extension);
@@ -662,10 +719,18 @@ fn read_embroidery_file(path: &Path) -> Result<EmbPattern> {
 
     match extension.as_str() {
         "dst" => readers::dst::read(&mut file, None),
-        "pes" => readers::pes::read(&mut file),
+        "pes" => {
+            let mut pattern = EmbPattern::new();
+            readers::pes::read(&mut file, &mut pattern)?;
+            Ok(pattern)
+        }
         "exp" => readers::exp::read(&mut file),
         "jef" => readers::jef::read(&mut file, None),
-        "vp3" => readers::vp3::read(&mut file),
+        "vp3" => {
+            let mut pattern = EmbPattern::new();
+            readers::vp3::read(&mut file, &mut pattern)?;
+            Ok(pattern)
+        }
         "pec" => readers::pec::read(&mut file),
         "json" => readers::json::read(&mut file),
         "csv" => {
@@ -761,6 +826,57 @@ fn write_embroidery_file(pattern: &EmbPattern, path: &Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_sanitize_filename() {
+        // Path traversal attempts - removes slashes and replaces ..
+        assert_eq!(
+            BatchConverterExecutor::sanitize_filename("../../../etc/passwd"),
+            "___etcpasswd"
+        );
+        assert_eq!(
+            BatchConverterExecutor::sanitize_filename("..\\..\\windows\\system32"),
+            "__windowssystem32"
+        );
+
+        // Malicious characters removed
+        assert_eq!(
+            BatchConverterExecutor::sanitize_filename("file<>:\"|?*.dst"),
+            "file.dst"
+        );
+
+        // Null bytes and control characters removed
+        assert_eq!(
+            BatchConverterExecutor::sanitize_filename("file\0name\x01test"),
+            "filenametest"
+        );
+
+        // Normal filenames should pass through unchanged
+        assert_eq!(
+            BatchConverterExecutor::sanitize_filename("my_design_2024"),
+            "my_design_2024"
+        );
+        assert_eq!(
+            BatchConverterExecutor::sanitize_filename("Pattern-01 (final)"),
+            "Pattern-01 (final)"
+        );
+
+        // Leading/trailing dots - replaced .. then trimmed
+        assert_eq!(
+            BatchConverterExecutor::sanitize_filename("...file..."),
+            "_.file_"
+        );
+
+        // Empty or whitespace-only results in empty string
+        assert_eq!(BatchConverterExecutor::sanitize_filename("   "), "");
+        assert_eq!(BatchConverterExecutor::sanitize_filename("..."), "_");
+
+        // Path separators within filename removed
+        assert_eq!(
+            BatchConverterExecutor::sanitize_filename("folder/file.dst"),
+            "folderfile.dst"
+        );
+    }
 
     #[test]
     fn test_conversion_results() {

@@ -2,12 +2,24 @@
 //!
 //! INF is a binary format storing detailed thread information (RGB colors, descriptions,
 //! catalog numbers) with no stitch data. Uses variable-length string fields.
+//!
+//! ## Format Limitations
+//!
+//! - **No stitches**: INF only stores thread metadata, no stitch data
+//! - **Max threads**: Limited to 10,000 threads (safety limit)
+//! - **Max record size**: Each thread limited to 65,535 bytes (u16 length)
+//! - **Binary format**: Big-endian encoding, not human-readable
+//! - **Variable length**: String fields are variable-length with null terminators
 
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
-use crate::utils::error::Result;
+use crate::utils::error::{Error, Result};
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::Read;
+
+// Format constants
+const MAX_INF_THREADS: usize = 10_000; // Safety limit for thread count
+const MIN_INF_RECORD_SIZE: usize = 5; // Minimum: index(2) + RGB(3)
 
 /// Read INF format file into a pattern
 ///
@@ -24,7 +36,7 @@ use std::io::Read;
 ///
 /// let mut file = File::open("threads.inf").unwrap();
 /// let mut pattern = EmbPattern::new();
-/// butabuti::io::readers::inf::read(&mut file, &mut pattern).unwrap();
+/// butabuti::formats::io::readers::inf::read(&mut file, &mut pattern).unwrap();
 /// ```
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     // Read header
@@ -33,22 +45,47 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     let _u2 = file.read_u32::<BigEndian>()?;
     let number_of_colors = file.read_u32::<BigEndian>()?;
 
+    // Validate thread count
+    if number_of_colors > MAX_INF_THREADS as u32 {
+        return Err(Error::Parse(format!(
+            "INF: Thread count {} exceeds maximum of {}",
+            number_of_colors, MAX_INF_THREADS
+        )));
+    }
+
     // Read each thread record
-    for _ in 0..number_of_colors {
+    for thread_idx in 0..number_of_colors {
         let length = file.read_u16::<BigEndian>()? as usize;
         if length < 2 {
-            break;
+            return Err(Error::Parse(format!(
+                "INF: Thread {} has invalid record length {}",
+                thread_idx, length
+            )));
         }
 
         let data_length = length - 2; // Subtract the 2 bytes of length itself
+
+        if data_length < MIN_INF_RECORD_SIZE {
+            return Err(Error::Parse(format!(
+                "INF: Thread {} record too small ({} bytes, min {})",
+                thread_idx, data_length, MIN_INF_RECORD_SIZE
+            )));
+        }
+
         let mut byte_data = vec![0u8; data_length];
 
         if file.read_exact(&mut byte_data).is_err() {
-            break;
+            return Err(Error::Parse(format!(
+                "INF: Unexpected EOF reading thread {} data",
+                thread_idx
+            )));
         }
 
-        if byte_data.len() < 5 {
-            continue;
+        if byte_data.len() < MIN_INF_RECORD_SIZE {
+            return Err(Error::Parse(format!(
+                "INF: Thread {} data truncated",
+                thread_idx
+            )));
         }
 
         // Parse RGB at positions 2, 3, 4

@@ -422,6 +422,150 @@ impl EmbPattern {
             EmbThread::from_rgb(r, g, b)
         })
     }
+
+    /// Validate pattern for DST format constraints
+    ///
+    /// DST format limitations:
+    /// - Maximum 1,000,000 stitches
+    /// - Stitch jumps limited to ±121 units per axis (±12.1mm)
+    /// - Supports STITCH, JUMP, COLOR_CHANGE, END
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::core::pattern::EmbPattern;
+    ///
+    /// let pattern = EmbPattern::new();
+    /// match pattern.validate_for_dst() {
+    ///     Ok(_) => println!("Pattern valid for DST"),
+    ///     Err(e) => println!("Validation failed: {}", e),
+    /// }
+    /// ```
+    pub fn validate_for_dst(&self) -> Result<()> {
+        const MAX_DST_STITCHES: usize = 1_000_000;
+        const MAX_DST_JUMP: f64 = 121.0;
+
+        if self.stitches.len() > MAX_DST_STITCHES {
+            return Err(Error::Encoding(format!(
+                "DST format supports max {} stitches, pattern has {}",
+                MAX_DST_STITCHES,
+                self.stitches.len()
+            )));
+        }
+
+        // Check stitch jumps
+        for i in 1..self.stitches.len() {
+            let prev = &self.stitches[i - 1];
+            let curr = &self.stitches[i];
+            let dx = (curr.x - prev.x).abs();
+            let dy = (curr.y - prev.y).abs();
+
+            if dx > MAX_DST_JUMP || dy > MAX_DST_JUMP {
+                return Err(Error::Encoding(format!(
+                    "DST stitch jump too large at index {}: dx={:.1}, dy={:.1} (max {:.1})",
+                    i, dx, dy, MAX_DST_JUMP
+                )));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Validate pattern for PES format constraints
+    ///
+    /// PES format limitations:
+    /// - Embeds PEC data (inherits PEC constraints)
+    /// - Maximum 1,000,000 stitches (practical limit)
+    /// - Supports metadata fields
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::core::pattern::EmbPattern;
+    ///
+    /// let pattern = EmbPattern::new();
+    /// pattern.validate_for_pes()?;
+    /// # Ok::<(), butabuti::utils::error::Error>(())
+    /// ```
+    pub fn validate_for_pes(&self) -> Result<()> {
+        const MAX_PES_STITCHES: usize = 1_000_000;
+
+        if self.stitches.len() > MAX_PES_STITCHES {
+            return Err(Error::Encoding(format!(
+                "PES format supports max {} stitches, pattern has {}",
+                MAX_PES_STITCHES,
+                self.stitches.len()
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Validate pattern for JEF format constraints
+    ///
+    /// JEF (Janome) format limitations:
+    /// - Maximum 1,000 colors
+    /// - Maximum 1,000,000 stitches
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::core::pattern::EmbPattern;
+    ///
+    /// let pattern = EmbPattern::new();
+    /// pattern.validate_for_jef()?;
+    /// # Ok::<(), butabuti::utils::error::Error>(())
+    /// ```
+    pub fn validate_for_jef(&self) -> Result<()> {
+        const MAX_JEF_COLORS: usize = 1_000;
+        const MAX_JEF_STITCHES: usize = 1_000_000;
+
+        if self.thread_list.len() > MAX_JEF_COLORS {
+            return Err(Error::Encoding(format!(
+                "JEF format supports max {} colors, pattern has {}",
+                MAX_JEF_COLORS,
+                self.thread_list.len()
+            )));
+        }
+
+        if self.stitches.len() > MAX_JEF_STITCHES {
+            return Err(Error::Encoding(format!(
+                "JEF format supports max {} stitches, pattern has {}",
+                MAX_JEF_STITCHES,
+                self.stitches.len()
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Validate pattern has minimum required data
+    ///
+    /// Checks:
+    /// - Pattern has at least one stitch
+    /// - Pattern has at least one thread (will use default if missing)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::core::pattern::EmbPattern;
+    /// use butabuti::core::constants::STITCH;
+    ///
+    /// let mut pattern = EmbPattern::new();
+    /// assert!(pattern.validate_basic().is_err()); // No stitches
+    ///
+    /// pattern.add_stitch_absolute(STITCH, 0.0, 0.0);
+    /// assert!(pattern.validate_basic().is_ok()); // Has stitches
+    /// ```
+    pub fn validate_basic(&self) -> Result<()> {
+        if self.stitches.is_empty() {
+            return Err(Error::InvalidPattern(
+                "Pattern must contain at least one stitch".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 impl Default for EmbPattern {
@@ -500,5 +644,60 @@ mod tests {
         assert_eq!(pattern.stitches()[1].command, JUMP);
         assert_eq!(pattern.stitches()[2].command, TRIM);
         assert_eq!(pattern.stitches()[3].command, COLOR_CHANGE);
+    }
+
+    #[test]
+    fn test_validate_basic() {
+        let pattern = EmbPattern::new();
+        assert!(
+            pattern.validate_basic().is_err(),
+            "Empty pattern should fail"
+        );
+
+        let mut pattern = EmbPattern::new();
+        pattern.add_stitch_absolute(STITCH, 0.0, 0.0);
+        assert!(
+            pattern.validate_basic().is_ok(),
+            "Pattern with stitches should pass"
+        );
+    }
+
+    #[test]
+    fn test_validate_for_dst() {
+        let mut pattern = EmbPattern::new();
+        pattern.add_stitch_absolute(STITCH, 0.0, 0.0);
+        assert!(pattern.validate_for_dst().is_ok());
+
+        // Test jump too large
+        let mut pattern = EmbPattern::new();
+        pattern.add_stitch_absolute(STITCH, 0.0, 0.0);
+        pattern.add_stitch_absolute(STITCH, 150.0, 0.0); // 150 > 121 max
+        assert!(
+            pattern.validate_for_dst().is_err(),
+            "Large jump should fail"
+        );
+    }
+
+    #[test]
+    fn test_validate_for_jef() {
+        let mut pattern = EmbPattern::new();
+        pattern.add_stitch_absolute(STITCH, 0.0, 0.0);
+        assert!(pattern.validate_for_jef().is_ok());
+
+        // Add many threads
+        for _ in 0..1001 {
+            pattern.add_thread(EmbThread::new(0xFF0000));
+        }
+        assert!(
+            pattern.validate_for_jef().is_err(),
+            "Too many colors should fail"
+        );
+    }
+
+    #[test]
+    fn test_validate_for_pes() {
+        let mut pattern = EmbPattern::new();
+        pattern.add_stitch_absolute(STITCH, 0.0, 0.0);
+        assert!(pattern.validate_for_pes().is_ok());
     }
 }

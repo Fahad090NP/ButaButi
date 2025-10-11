@@ -2,20 +2,40 @@
 //!
 //! EDR is Embird's color format with 4-byte RGB records, storing thread color
 //! information for embroidery designs in a simple binary structure.
+//!
+//! ## Format Limitations
+//!
+//! - **No stitches**: EDR only stores thread colors, no stitch data
+//! - **Max threads**: Limited to 10,000 threads (safety limit)
+//! - **Fixed record size**: Each thread is exactly 4 bytes (RGB + padding)
+//! - **No metadata**: No pattern name, size, or other attributes
 
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
 use crate::utils::error::{Error, Result};
 use std::io::Read;
 
+// Format constants
+const EDR_RECORD_SIZE: usize = 4; // Each thread: R, G, B, padding
+const MAX_EDR_THREADS: usize = 10_000; // Safety limit for thread count
+
 /// Read EDR (Embird Color) format
 ///
 /// EDR is a simple color list format with RGB values.
 /// Each thread is stored as 4 bytes: [RED, GREEN, BLUE, PADDING]
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
-    let mut buffer = [0u8; 4];
+    let mut buffer = [0u8; EDR_RECORD_SIZE];
+    let mut thread_count = 0;
 
     loop {
+        // Validate thread count before reading
+        if thread_count >= MAX_EDR_THREADS {
+            return Err(Error::Parse(format!(
+                "EDR: Thread count exceeds maximum of {}",
+                MAX_EDR_THREADS
+            )));
+        }
+
         // Try to read 4 bytes (R, G, B, padding)
         match file.read_exact(&mut buffer) {
             Ok(_) => {
@@ -26,6 +46,7 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
 
                 let thread = EmbThread::from_rgb(red, green, blue);
                 pattern.add_thread(thread);
+                thread_count += 1;
             }
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
                 // End of file reached

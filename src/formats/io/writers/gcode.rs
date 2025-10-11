@@ -38,7 +38,7 @@ pub fn default_settings() -> EncoderSettings {
 /// pattern.end();
 ///
 /// let mut file = File::create("output.gcode").unwrap();
-/// butabuti::io::writers::gcode::write(&pattern, &mut file).unwrap();
+/// butabuti::formats::io::writers::gcode::write(&pattern, &mut file).unwrap();
 /// ```
 pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
     write_with_settings(pattern, file, 10.0)

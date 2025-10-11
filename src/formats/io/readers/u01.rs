@@ -2,6 +2,17 @@
 //!
 //! U01 format supports FAST/SLOW speed commands and explicit needle changes,
 //! used by industrial Barudan embroidery machines with byte-encoded coordinates.
+//!
+//! ## Format Limitations
+//! - Fixed header size: 256 bytes (0x100)
+//! - Maximum 1,000,000 stitches per file
+//! - 3-byte stitch encoding: control, dy, dx
+
+/// U01 header size in bytes
+const HEADER_SIZE: usize = 0x100;
+
+/// Maximum allowed stitch count
+const MAX_STITCHES: usize = 1_000_000;
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
@@ -11,8 +22,17 @@ use std::io::Read;
 /// Read U01 format embroidery file
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     // Skip the first 256 bytes (0x100) header
-    let mut header = vec![0u8; 0x100];
-    file.read_exact(&mut header)?;
+    let mut header = vec![0u8; HEADER_SIZE];
+    file.read_exact(&mut header).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::UnexpectedEof {
+            crate::utils::error::Error::Parse(format!(
+                "U01 file too small: header must be {} bytes",
+                HEADER_SIZE
+            ))
+        } else {
+            crate::utils::error::Error::from(e)
+        }
+    })?;
 
     read_stitches(file, pattern)?;
 
@@ -20,10 +40,21 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
 }
 
 fn read_stitches(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
+    let mut stitch_count = 0;
+
     loop {
         let mut buf = [0u8; 3];
         if file.read_exact(&mut buf).is_err() {
             break; // End of file
+        }
+
+        // Check for excessive stitch count
+        stitch_count += 1;
+        if stitch_count > MAX_STITCHES {
+            return Err(crate::utils::error::Error::Parse(format!(
+                "U01 file exceeds maximum stitch count of {}",
+                MAX_STITCHES
+            )));
         }
 
         let ctrl = buf[0];

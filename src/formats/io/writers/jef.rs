@@ -304,4 +304,57 @@ mod tests {
         assert!(result.is_ok());
         assert!(buffer.len() > 100); // JEF has a header
     }
+
+    #[test]
+    fn test_jef_round_trip() {
+        use crate::formats::io::readers::jef;
+        use std::io::Cursor;
+
+        // Create original pattern
+        let mut original = EmbPattern::new();
+        original.add_thread(crate::core::thread::EmbThread::from_rgb(255, 0, 0));
+        original.add_thread(crate::core::thread::EmbThread::from_rgb(0, 0, 255));
+        original.add_stitch_absolute(STITCH, 0.0, 0.0);
+        original.add_stitch_absolute(STITCH, 100.0, 0.0);
+        original.add_stitch_absolute(STITCH, 100.0, 100.0);
+        original.add_stitch_relative(0.0, 0.0, COLOR_CHANGE);
+        original.add_stitch_absolute(STITCH, 0.0, 100.0);
+        original.add_stitch_absolute(STITCH, 0.0, 0.0);
+        original.end();
+
+        let original_stitch_count = original.count_stitches();
+        let original_thread_count = original.threads().len();
+
+        // Write to buffer (trims=false, trim_at=127, date)
+        let mut buffer = Cursor::new(Vec::new());
+        write(&mut buffer, &original, false, 127, "20251011120000").unwrap();
+
+        // Verify buffer has data
+        assert!(!buffer.get_ref().is_empty());
+
+        // Read back (needs Seek)
+        buffer.set_position(0);
+        let read_back = jef::read(&mut buffer, None).unwrap();
+
+        // Verify thread count
+        assert_eq!(read_back.threads().len(), original_thread_count);
+
+        // Verify stitch count (should be close, allowing for encoding differences)
+        let read_stitch_count = read_back.count_stitches();
+        assert!(
+            read_stitch_count >= original_stitch_count - 2
+                && read_stitch_count <= original_stitch_count + 2,
+            "Stitch count mismatch: original={}, read={}",
+            original_stitch_count,
+            read_stitch_count
+        );
+
+        // Verify we have stitches
+        assert!(!read_back.stitches().is_empty());
+
+        // Verify coordinate bounds are reasonable
+        let (min_x, min_y, max_x, max_y) = read_back.bounds();
+        assert!(max_x - min_x > 0.0, "Pattern has no width");
+        assert!(max_y - min_y > 0.0, "Pattern has no height");
+    }
 }

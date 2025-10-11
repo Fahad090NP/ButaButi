@@ -33,3 +33,6 @@ pub mod u01;
 pub mod vp3;
 /// XXX (Singer) format reader
 pub mod xxx;
+
+#[cfg(test)]
+mod tests;

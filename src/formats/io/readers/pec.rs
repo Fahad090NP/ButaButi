@@ -2,6 +2,14 @@
 //!
 //! PEC is the Brother Embroidery Card format, also used as an embedded section in PES files.
 //! Contains a graphics section for LCD preview and uses the 64-color PEC thread palette.
+//!
+//! ## Format Limitations
+//! - Uses 64-color PEC thread palette (indices 0-63)
+//! - Maximum 1,000,000 stitches per file
+//! - Stitch encoding: 7-bit or 12-bit signed deltas with control flags
+
+/// Maximum allowed stitch count
+const MAX_STITCHES: usize = 1_000_000;
 
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
@@ -111,7 +119,17 @@ fn map_pec_colors(
 
 /// Read PEC stitches
 fn read_pec_stitches<R: Read>(reader: &mut ReadHelper<R>, pattern: &mut EmbPattern) -> Result<()> {
+    let mut stitch_count = 0;
     loop {
+        // Check for excessive stitch count
+        stitch_count += 1;
+        if stitch_count > MAX_STITCHES {
+            return Err(Error::Parse(format!(
+                "PEC file exceeds maximum stitch count of {}",
+                MAX_STITCHES
+            )));
+        }
+
         let val1 = reader.read_u8()?;
         let val2 = match reader.read_u8() {
             Ok(v) => v,
@@ -300,7 +318,10 @@ pub fn read<R: Read + Seek>(reader: &mut R) -> Result<EmbPattern> {
     // Read header
     let pec_string = helper.read_string(8)?;
     if pec_string != "#PEC0001" {
-        return Err(Error::Parse(format!("Invalid PEC header: {}", pec_string)));
+        return Err(Error::Parse(format!(
+            "Invalid PEC header: expected '#PEC0001', got '{}'",
+            pec_string
+        )));
     }
 
     let mut pattern = EmbPattern::new();

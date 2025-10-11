@@ -29,7 +29,7 @@ use std::io::{Seek, SeekFrom, Write};
 /// );
 ///
 /// let mut file = File::create("threads.inf").unwrap();
-/// butabuti::io::writers::inf::write(&pattern, &mut file).unwrap();
+/// butabuti::formats::io::writers::inf::write(&pattern, &mut file).unwrap();
 /// ```
 pub fn write(pattern: &EmbPattern, file: &mut (impl Write + Seek)) -> Result<()> {
     let threads = pattern.threads();

@@ -553,8 +553,9 @@ mod tests {
 
         // Test reading - if it fails, that's okay for now as the reader may need updating
         buffer.set_position(0);
-        match pes::read(&mut buffer) {
-            Ok(read_pattern) => {
+        let mut read_pattern = EmbPattern::new();
+        match pes::read(&mut buffer, &mut read_pattern) {
+            Ok(_) => {
                 assert!(!read_pattern.stitches().is_empty(), "No stitches read");
             }
             Err(e) => {

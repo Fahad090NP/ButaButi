@@ -2,11 +2,21 @@
 //!
 //! COL is a simple text format storing thread colors only (no stitches). Format consists
 //! of a count line followed by catalog_number,R,G,B entries for each thread.
+//!
+//! ## Format Limitations
+//!
+//! - **No stitches**: COL only stores thread colors, no stitch data
+//! - **Max threads**: Limited to 10,000 threads (safety limit)
+//! - **Text format**: Line-based parsing, no binary data
+//! - **No metadata**: No pattern name, size, or other attributes
 
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
-use crate::utils::error::Result;
+use crate::utils::error::{Error, Result};
 use std::io::{BufRead, BufReader, Read};
+
+// Format constants
+const MAX_THREADS: usize = 10_000; // Safety limit for thread count
 
 /// Read COL format file into a pattern
 ///
@@ -23,7 +33,7 @@ use std::io::{BufRead, BufReader, Read};
 ///
 /// let mut file = File::open("colors.col").unwrap();
 /// let mut pattern = EmbPattern::new();
-/// butabuti::io::readers::col::read(&mut file, &mut pattern).unwrap();
+/// butabuti::formats::io::readers::col::read(&mut file, &mut pattern).unwrap();
 /// ```
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     let reader = BufReader::new(file);
@@ -31,31 +41,75 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
 
     // Read first line: color count
     if let Some(Ok(first_line)) = lines.next() {
-        let count: usize = first_line.trim().parse().unwrap_or(0);
+        let count: usize = first_line
+            .trim()
+            .parse()
+            .map_err(|e| Error::Parse(format!("COL: Invalid thread count in header: {}", e)))?;
+
+        // Validate thread count
+        if count > MAX_THREADS {
+            return Err(Error::Parse(format!(
+                "COL: Thread count {} exceeds maximum of {}",
+                count, MAX_THREADS
+            )));
+        }
 
         // Read each thread definition
-        for _ in 0..count {
+        for line_num in 0..count {
             if let Some(Ok(line)) = lines.next() {
                 let parts: Vec<&str> = line.split(',').collect();
 
-                if parts.len() >= 4 {
-                    // Parse: catalog_number, R, G, B
-                    let catalog = parts[0].trim();
-
-                    if let (Ok(r), Ok(g), Ok(b)) = (
-                        parts[1].trim().parse::<u8>(),
-                        parts[2].trim().parse::<u8>(),
-                        parts[3].trim().parse::<u8>(),
-                    ) {
-                        let mut thread = EmbThread::from_rgb(r, g, b);
-                        if !catalog.is_empty() && catalog != "0" {
-                            thread = thread.with_catalog_number(catalog);
-                        }
-                        pattern.add_thread(thread);
-                    }
+                if parts.len() < 4 {
+                    return Err(Error::Parse(format!(
+                        "COL: Invalid thread line {} - expected 4 fields (catalog,R,G,B), got {}",
+                        line_num + 2, // +2 because line 1 is count, threads start at line 2
+                        parts.len()
+                    )));
                 }
+
+                // Parse: catalog_number, R, G, B
+                let catalog = parts[0].trim();
+
+                let r = parts[1].trim().parse::<u8>().map_err(|e| {
+                    Error::Parse(format!(
+                        "COL: Invalid red value on line {}: {}",
+                        line_num + 2,
+                        e
+                    ))
+                })?;
+
+                let g = parts[2].trim().parse::<u8>().map_err(|e| {
+                    Error::Parse(format!(
+                        "COL: Invalid green value on line {}: {}",
+                        line_num + 2,
+                        e
+                    ))
+                })?;
+
+                let b = parts[3].trim().parse::<u8>().map_err(|e| {
+                    Error::Parse(format!(
+                        "COL: Invalid blue value on line {}: {}",
+                        line_num + 2,
+                        e
+                    ))
+                })?;
+
+                let mut thread = EmbThread::from_rgb(r, g, b);
+                if !catalog.is_empty() && catalog != "0" {
+                    thread = thread.with_catalog_number(catalog);
+                }
+                pattern.add_thread(thread);
+            } else {
+                return Err(Error::Parse(format!(
+                    "COL: Unexpected end of file - expected {} threads, got {}",
+                    count, line_num
+                )));
             }
         }
+    } else {
+        return Err(Error::Parse(
+            "COL: Empty file - expected thread count header".to_string(),
+        ));
     }
 
     Ok(())

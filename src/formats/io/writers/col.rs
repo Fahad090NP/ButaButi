@@ -25,7 +25,7 @@ use std::io::Write;
 /// pattern.add_thread(EmbThread::from_rgb(0, 255, 0));
 ///
 /// let mut file = File::create("colors.col").unwrap();
-/// butabuti::io::writers::col::write(&pattern, &mut file).unwrap();
+/// butabuti::formats::io::writers::col::write(&pattern, &mut file).unwrap();
 /// ```
 pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
     let threads = pattern.threads();

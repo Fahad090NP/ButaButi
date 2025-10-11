@@ -2,6 +2,14 @@
 //!
 //! EXP is a widely-used format with 2-byte stitch records using bit-encoded coordinates.
 //! Supports stitches, jumps, color changes, and standard embroidery commands.
+//!
+//! ## Format Limitations
+//! - Maximum 1,000,000 stitches per file
+//! - 2-byte stitch encoding with control byte (0x80) for commands
+//! - Coordinate range: -128 to +127 per stitch
+
+/// Maximum allowed stitch count
+const MAX_STITCHES: usize = 1_000_000;
 
 use crate::core::pattern::EmbPattern;
 use crate::utils::error::{Error, Result};
@@ -10,12 +18,22 @@ use std::io::Read;
 /// Read EXP stitches
 fn read_stitches<R: Read>(reader: &mut R, pattern: &mut EmbPattern) -> Result<()> {
     let mut buffer = [0u8; 2];
+    let mut stitch_count = 0;
 
     loop {
         match reader.read_exact(&mut buffer) {
             Ok(_) => {}
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(Error::from(e)),
+        }
+
+        // Check for excessive stitch count
+        stitch_count += 1;
+        if stitch_count > MAX_STITCHES {
+            return Err(Error::Parse(format!(
+                "EXP file exceeds maximum stitch count of {}",
+                MAX_STITCHES
+            )));
         }
 
         if buffer[0] != 0x80 {

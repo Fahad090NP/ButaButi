@@ -2,6 +2,15 @@
 //!
 //! Provides lossless interchange format preserving all pattern data including extras,
 //! metadata, and complete stitch information in human-readable JSON structure.
+//!
+//! ## Format Limitations
+//!
+//! - **Text-based**: Slower than binary formats, larger file sizes
+//! - **Max stitches**: Limited to 10,000,000 stitches (safety limit)
+//! - **Max threads**: Limited to 1,000 threads (safety limit)
+//! - **JSON structure**: Requires valid JSON syntax
+//! - **Precision**: Floating-point coordinates may lose precision
+//! - **File size**: Typically 5-10x larger than equivalent binary formats
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
@@ -10,6 +19,10 @@ use crate::utils::error::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Read;
+
+// Format constants
+const MAX_JSON_STITCHES: usize = 10_000_000; // Safety limit for stitch count
+const MAX_JSON_THREADS: usize = 1_000; // Safety limit for thread count
 
 /// JSON representation of an embroidery pattern
 #[derive(Debug, Serialize, Deserialize)]
@@ -55,6 +68,23 @@ pub fn read<R: Read>(reader: &mut R) -> Result<EmbPattern> {
     let json_pattern: JsonPattern = serde_json::from_reader(reader)
         .map_err(|e| Error::Parse(format!("JSON parse error: {}", e)))?;
 
+    // Validate counts before processing
+    if json_pattern.threads.len() > MAX_JSON_THREADS {
+        return Err(Error::Parse(format!(
+            "JSON: Thread count {} exceeds maximum of {}",
+            json_pattern.threads.len(),
+            MAX_JSON_THREADS
+        )));
+    }
+
+    if json_pattern.stitches.len() > MAX_JSON_STITCHES {
+        return Err(Error::Parse(format!(
+            "JSON: Stitch count {} exceeds maximum of {}",
+            json_pattern.stitches.len(),
+            MAX_JSON_STITCHES
+        )));
+    }
+
     let mut pattern = EmbPattern::new();
 
     // Add metadata
@@ -95,14 +125,26 @@ pub fn read<R: Read>(reader: &mut R) -> Result<EmbPattern> {
 /// Parse color from hex string
 fn parse_color(color_str: &str) -> Result<u32> {
     if let Some(hex) = color_str.strip_prefix('#') {
-        u32::from_str_radix(hex, 16)
-            .map_err(|_| Error::Parse(format!("Invalid color: {}", color_str)))
+        u32::from_str_radix(hex, 16).map_err(|_| {
+            Error::Parse(format!(
+                "Invalid hex color '{}': expected format #RRGGBB or RRGGBB",
+                color_str
+            ))
+        })
     } else if let Some(hex) = color_str.strip_prefix("0x") {
-        u32::from_str_radix(hex, 16)
-            .map_err(|_| Error::Parse(format!("Invalid color: {}", color_str)))
+        u32::from_str_radix(hex, 16).map_err(|_| {
+            Error::Parse(format!(
+                "Invalid hex color '{}': expected format 0xRRGGBB",
+                color_str
+            ))
+        })
     } else {
-        u32::from_str_radix(color_str, 16)
-            .map_err(|_| Error::Parse(format!("Invalid color: {}", color_str)))
+        u32::from_str_radix(color_str, 16).map_err(|_| {
+            Error::Parse(format!(
+                "Invalid hex color '{}': expected format RRGGBB, #RRGGBB, or 0xRRGGBB",
+                color_str
+            ))
+        })
     }
 }
 

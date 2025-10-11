@@ -2,12 +2,24 @@
 //!
 //! Reads G-code CNC machine language adapted for embroidery. Supports G00/G01 for
 //! movement/stitches, M00/M01 for color changes/stops, and comment-based metadata.
+//!
+//! ## Format Limitations
+//!
+//! - **CNC origin**: Designed for CNC machines, not embroidery-specific
+//! - **Max stitches**: Limited to 10,000,000 stitches (safety limit)
+//! - **Max lines**: Limited to 20,000,000 lines (safety limit)
+//! - **Coordinate flip**: X and Y typically inverted from embroidery conventions
+//! - **Scale conversion**: Requires unit conversion (mm/inch → 0.1mm)
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
-use crate::utils::error::Result;
+use crate::utils::error::{Error, Result};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read};
+
+// Format constants
+const MAX_GCODE_STITCHES: usize = 10_000_000; // Safety limit for stitch count
+const MAX_GCODE_LINES: usize = 20_000_000; // Safety limit for line count
 
 /// Parse a single line of G-code
 fn parse_gcode_line(line: &str) -> HashMap<String, f64> {
@@ -102,7 +114,7 @@ fn parse_gcode_line(line: &str) -> HashMap<String, f64> {
 ///
 /// let mut file = File::open("design.gcode").unwrap();
 /// let mut pattern = EmbPattern::new();
-/// butabuti::io::readers::gcode::read(&mut file, &mut pattern).unwrap();
+/// butabuti::formats::io::readers::gcode::read(&mut file, &mut pattern).unwrap();
 /// ```
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     let reader = BufReader::new(file);
@@ -110,8 +122,18 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     let flip_x = -1.0; // G-code typically uses flipped X
     let flip_y = -1.0; // G-code typically uses flipped Y
     let mut scale = 10.0; // Default to mm mode (10 units per mm)
+    let mut line_count = 0;
+    let mut stitch_count = 0;
 
     for line in reader.lines() {
+        line_count += 1;
+        if line_count > MAX_GCODE_LINES {
+            return Err(Error::Parse(format!(
+                "GCODE: Line count {} exceeds maximum of {}",
+                line_count, MAX_GCODE_LINES
+            )));
+        }
+
         let line = line?;
         let gc = parse_gcode_line(&line);
 
@@ -123,6 +145,14 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
         if let Some(&g_val) = gc.get("g") {
             // G00/G01 - Move/Stitch
             if (g_val == 0.0 || g_val == 1.0) && gc.contains_key("x") && gc.contains_key("y") {
+                stitch_count += 1;
+                if stitch_count > MAX_GCODE_STITCHES {
+                    return Err(Error::Parse(format!(
+                        "GCODE: Stitch count {} exceeds maximum of {}",
+                        stitch_count, MAX_GCODE_STITCHES
+                    )));
+                }
+
                 let x = gc.get("x").unwrap() * scale * flip_x;
                 let y = gc.get("y").unwrap() * scale * flip_y;
 

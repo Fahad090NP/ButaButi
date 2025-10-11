@@ -2,6 +2,33 @@
 //!
 //! DST is one of the most common industrial embroidery formats, using a 512-byte header
 //! followed by 3-byte stitch records with bit-encoded coordinates and commands.
+//!
+//! ## Format Limitations
+//!
+//! - **Header size**: Fixed 512 bytes
+//! - **Stitch range**: X/Y coordinates: -121 to +121 per stitch record (ternary encoding)
+//! - **Maximum stitches**: 1,000,000 (enforced for safety)
+//! - **Coordinate system**: 0.1mm units, Y-axis is negated
+//! - **Color changes**: Supported via control bits
+//!
+//! ## Validation
+//!
+//! This reader validates:
+//! - File must be at least 512 bytes (header size)
+//! - Header contains DST markers (LA:, ST:, CO:) or valid ASCII text
+//! - Stitch count does not exceed safety limit
+//!
+//! ## Example
+//!
+//! ```no_run
+//! use butabuti::prelude::*;
+//! use std::fs::File;
+//!
+//! let mut file = File::open("design.dst")?;
+//! let mut pattern = EmbPattern::new();
+//! butabuti::formats::io::readers::dst::read(&mut file, Some(Default::default()))?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
@@ -9,6 +36,12 @@ use crate::core::thread::EmbThread;
 use crate::utils::error::{Error, Result};
 use std::collections::HashMap;
 use std::io::Read;
+
+/// DST header size in bytes
+const DST_HEADER_SIZE: usize = 512;
+
+/// Maximum allowed stitches for safety
+const MAX_STITCHES: usize = 1_000_000;
 
 /// Get bit value at position
 #[inline]
@@ -88,8 +121,35 @@ fn process_header_info(pattern: &mut EmbPattern, prefix: &str, value: &str) {
 
 /// Read DST header (512 bytes)
 fn read_header<R: Read>(reader: &mut R, pattern: &mut EmbPattern) -> Result<()> {
-    let mut header = vec![0u8; 512];
-    reader.read_exact(&mut header)?;
+    let mut header = vec![0u8; DST_HEADER_SIZE];
+    reader.read_exact(&mut header).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::UnexpectedEof {
+            Error::Parse(format!(
+                "DST file too small: header must be {} bytes",
+                DST_HEADER_SIZE
+            ))
+        } else {
+            Error::from(e)
+        }
+    })?;
+
+    // Validate DST header - should contain ASCII text with common DST markers
+    // DST headers typically start with "LA:" (Label/Name) or at least contain readable ASCII
+    let header_text = String::from_utf8_lossy(&header[0..32]);
+    if !header_text.contains("LA:") && !header_text.contains("ST:") && !header_text.contains("CO:")
+    {
+        // Check if first 32 bytes contain mostly printable ASCII or are mostly zeros
+        let printable_count = header[0..32]
+            .iter()
+            .filter(|&&b| (32..127).contains(&b) || b == 0 || b == 13 || b == 10)
+            .count();
+        if printable_count < 24 {
+            return Err(Error::Parse(
+                "Invalid DST header: expected DST text markers (LA:, ST:, CO:) or ASCII text"
+                    .to_string(),
+            ));
+        }
+    }
 
     let mut start = 0;
     for (i, &byte) in header.iter().enumerate() {
@@ -121,12 +181,22 @@ fn read_stitches<R: Read>(
 ) -> Result<()> {
     let mut sequin_mode = false;
     let mut buffer = [0u8; 3];
+    let mut stitch_count = 0;
 
     loop {
         match reader.read_exact(&mut buffer) {
             Ok(_) => {}
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(Error::from(e)),
+        }
+
+        // Check for excessive stitch count
+        stitch_count += 1;
+        if stitch_count > MAX_STITCHES {
+            return Err(Error::Parse(format!(
+                "DST file exceeds maximum stitch count of {}",
+                MAX_STITCHES
+            )));
         }
 
         let dx = decode_dx(buffer[0], buffer[1], buffer[2]) as f64;

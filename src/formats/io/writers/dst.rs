@@ -288,4 +288,54 @@ mod tests {
         let result = encode_record(1, 1, STITCH);
         assert!(result.is_ok());
     }
+
+    #[test]
+    fn test_dst_round_trip() {
+        use crate::formats::io::readers::dst;
+        use std::io::Cursor;
+
+        // Create original pattern
+        let mut original = EmbPattern::new();
+        original.add_thread(crate::core::thread::EmbThread::from_rgb(255, 0, 0));
+        original.add_thread(crate::core::thread::EmbThread::from_rgb(0, 255, 0));
+        original.add_stitch_absolute(STITCH, 0.0, 0.0);
+        original.add_stitch_absolute(STITCH, 100.0, 0.0);
+        original.add_stitch_absolute(STITCH, 100.0, 100.0);
+        original.add_stitch_relative(0.0, 0.0, COLOR_CHANGE);
+        original.add_stitch_absolute(STITCH, 0.0, 100.0);
+        original.add_stitch_absolute(STITCH, 0.0, 0.0);
+        original.end();
+
+        let original_stitch_count = original.count_stitches();
+
+        // Write to buffer (extended_header=false, trim_at=127)
+        let mut buffer = Cursor::new(Vec::new());
+        write(&mut buffer, &original, false, 127).unwrap();
+
+        // Verify buffer has DST header
+        let data = buffer.get_ref();
+        assert!(data.len() >= DST_HEADER_SIZE);
+
+        // Read back
+        buffer.set_position(0);
+        let read_back = dst::read(&mut buffer, None).unwrap();
+
+        // Verify stitch count (should be close, allowing for encoding differences)
+        let read_stitch_count = read_back.count_stitches();
+        assert!(
+            read_stitch_count >= original_stitch_count - 2
+                && read_stitch_count <= original_stitch_count + 2,
+            "Stitch count mismatch: original={}, read={}",
+            original_stitch_count,
+            read_stitch_count
+        );
+
+        // Verify we have stitches
+        assert!(!read_back.stitches().is_empty());
+
+        // Verify coordinate bounds are reasonable
+        let (min_x, min_y, max_x, max_y) = read_back.bounds();
+        assert!(max_x - min_x > 0.0, "Pattern has no width");
+        assert!(max_y - min_y > 0.0, "Pattern has no height");
+    }
 }

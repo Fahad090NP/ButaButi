@@ -9,7 +9,7 @@
 - **Binary I/O**: Use `WriteHelper` trait from `formats::io::utils` (auto-implemented for all `Write` types)
 - **No auto-docs**: Never create markdown files after changes unless explicitly requested
 - **Error handling**: Always return `Result`, never `panic!()` in library code
-- **Test isolation**: Use `#[cfg(test)]` modules, test with files from `testing/` directory
+- **Test isolation**: Use cfg(test) modules, test with files from `testing/` directory
 
 ## Overview
 
@@ -275,7 +275,7 @@ For simple transforms, use pattern methods: `translate()`, `move_center_to_origi
 
 ## Testing Requirements
 
-- All new features need unit tests in `#[cfg(test)]` modules
+- All new features need unit tests in cfg(test) modules
 - Test edge cases: empty patterns, single stitch, invalid data
 - Format readers: test with real file samples from `testing/` directory
 - Round-trip tests: read → write → read → compare stitch counts
@@ -404,13 +404,13 @@ results.print_summary();
 5. **Add tests**: In both reader and writer files
 
    ```rust
-   #[cfg(test)]
+   // Add cfg(test) attribute to test module
    mod tests {
        use super::*;
        use crate::core::pattern::EmbPattern;
        use std::io::Cursor;
 
-       #[test]
+       // Add test attribute to test function
        fn test_read_formatname() {
            let data = vec![/* test bytes */];
            let mut pattern = EmbPattern::new();

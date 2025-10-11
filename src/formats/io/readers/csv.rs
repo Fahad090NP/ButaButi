@@ -2,12 +2,25 @@
 //!
 //! Human-readable comma-separated values format for debugging and analysis.
 //! Each line represents a stitch with coordinates, command, and thread information.
+//!
+//! ## Format Limitations
+//!
+//! - **Text-based**: Slower than binary formats for large files
+//! - **Max stitches**: Limited to 10,000,000 stitches (safety limit)
+//! - **Max threads**: Limited to 1,000 threads (safety limit)
+//! - **Precision**: Floating-point coordinates may lose precision
+//! - **File size**: Larger than equivalent binary formats
 
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
 use crate::utils::error::{Error, Result};
 use std::io::{BufRead, BufReader, Read};
+
+// Format constants
+const MAX_CSV_STITCHES: usize = 10_000_000; // Safety limit for stitch count
+const MAX_CSV_THREADS: usize = 1_000; // Safety limit for thread count
+const MAX_CSV_LINE_LENGTH: usize = 10_000; // Safety limit for line length
 
 /// Read CSV embroidery format
 ///
@@ -19,10 +32,23 @@ use std::io::{BufRead, BufReader, Read};
 /// - `$,index,color[,description,brand,catalog,details,weight]` - Thread
 pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     let reader = BufReader::new(file);
+    let mut stitch_count = 0;
+    let mut thread_count = 0;
 
-    for line in reader.lines() {
+    for (line_num, line) in reader.lines().enumerate() {
+        let line_num = line_num + 1; // Make it 1-indexed for better UX
         let line = line.map_err(Error::Io)?;
         let trimmed = line.trim();
+
+        // Validate line length
+        if trimmed.len() > MAX_CSV_LINE_LENGTH {
+            return Err(Error::Parse(format!(
+                "CSV line {}: Line too long ({} bytes, max {})",
+                line_num,
+                trimmed.len(),
+                MAX_CSV_LINE_LENGTH
+            )));
+        }
 
         // Skip empty lines
         if trimmed.is_empty() {
@@ -44,16 +70,31 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                     continue;
                 }
 
+                // Validate stitch count
+                stitch_count += 1;
+                if stitch_count > MAX_CSV_STITCHES {
+                    return Err(Error::Parse(format!(
+                        "CSV: Stitch count {} exceeds maximum of {}",
+                        stitch_count, MAX_CSV_STITCHES
+                    )));
+                }
+
                 let command_str = parts[2];
                 let command = parse_command(command_str)?;
 
                 if parts.len() >= 5 {
                     // Stitch with coordinates
                     let x = parts[3].parse::<f64>().map_err(|_| {
-                        crate::utils::error::Error::Parse("Invalid X coordinate in CSV".to_string())
+                        crate::utils::error::Error::Parse(format!(
+                            "CSV line {}: Invalid X coordinate '{}' (expected floating point number)",
+                            line_num, parts[3]
+                        ))
                     })?;
                     let y = parts[4].parse::<f64>().map_err(|_| {
-                        crate::utils::error::Error::Parse("Invalid Y coordinate in CSV".to_string())
+                        crate::utils::error::Error::Parse(format!(
+                            "CSV line {}: Invalid Y coordinate '{}' (expected floating point number)",
+                            line_num, parts[4]
+                        ))
                     })?;
                     pattern.add_stitch_absolute(command, x, y);
                 } else {
@@ -73,6 +114,15 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
             s if s.starts_with('$') => {
                 if parts.len() < 3 {
                     continue;
+                }
+
+                // Validate thread count
+                thread_count += 1;
+                if thread_count > MAX_CSV_THREADS {
+                    return Err(Error::Parse(format!(
+                        "CSV: Thread count {} exceeds maximum of {}",
+                        thread_count, MAX_CSV_THREADS
+                    )));
                 }
 
                 let mut thread = EmbThread::from_rgb(0, 0, 0);

@@ -2,6 +2,20 @@
 //!
 //! JEF is the Janome Embroidery Format with a binary header containing design bounds,
 //! hoop information, and thread colors from the predefined JEF palette.
+//!
+//! ## Format Limitations
+//! - Stitch offset must be within 0-100MB range (100,000,000 bytes)
+//! - Maximum 1,000 colors allowed
+//! - Maximum 1,000,000 stitches per file
+
+/// Maximum allowed stitch data offset in bytes (100MB)
+const MAX_STITCH_OFFSET: i32 = 100_000_000;
+
+/// Maximum allowed color count
+const MAX_COLORS: usize = 1000;
+
+/// Maximum allowed stitch count
+const MAX_STITCHES: usize = 1_000_000;
 
 use crate::core::pattern::EmbPattern;
 use crate::formats::io::utils::ReadHelper;
@@ -19,12 +33,22 @@ fn read_stitches<R: Read>(
 ) -> Result<()> {
     let mut color_index = 1;
     let mut buffer = [0u8; 2];
+    let mut stitch_count = 0;
 
     loop {
         match reader.read_exact(&mut buffer) {
             Ok(_) => {}
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(Error::from(e)),
+        }
+
+        // Check for excessive stitch count
+        stitch_count += 1;
+        if stitch_count > MAX_STITCHES {
+            return Err(Error::Parse(format!(
+                "JEF file exceeds maximum stitch count of {}",
+                MAX_STITCHES
+            )));
         }
 
         if buffer[0] != 0x80 {
@@ -120,11 +144,27 @@ pub fn read<R: Read + Seek>(
     // Read stitch offset
     let stitch_offset = helper.read_i32_le()?;
 
+    // Validate stitch offset is reasonable
+    if !(0..=MAX_STITCH_OFFSET).contains(&stitch_offset) {
+        return Err(Error::Parse(format!(
+            "Invalid JEF stitch offset: {} (must be between 0 and {})",
+            stitch_offset, MAX_STITCH_OFFSET
+        )));
+    }
+
     // Skip 20 bytes
     helper.read_bytes(20)?;
 
     // Read color count
     let count_colors = helper.read_i32_le()? as usize;
+
+    // Validate color count is reasonable
+    if count_colors > MAX_COLORS {
+        return Err(Error::Parse(format!(
+            "Invalid JEF color count: {} (must be <= {})",
+            count_colors, MAX_COLORS
+        )));
+    }
 
     // Skip 88 bytes
     helper.read_bytes(88)?;
