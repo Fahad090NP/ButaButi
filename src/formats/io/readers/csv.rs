@@ -6,7 +6,11 @@
 use crate::core::constants::*;
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
+<<<<<<< HEAD
 use crate::utils::error::Result;
+=======
+use crate::utils::error::{Error, Result};
+>>>>>>> 880f76a46a2296d3837655370b6aed96e3bf4977
 use std::io::{BufRead, BufReader, Read};
 
 /// Read CSV embroidery format
@@ -21,7 +25,11 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
     let reader = BufReader::new(file);
 
     for line in reader.lines() {
+<<<<<<< HEAD
         let line = line?;
+=======
+        let line = line.map_err(Error::Io)?;
+>>>>>>> 880f76a46a2296d3837655370b6aed96e3bf4977
         let trimmed = line.trim();
 
         // Skip empty lines
@@ -49,12 +57,21 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
 
                 if parts.len() >= 5 {
                     // Stitch with coordinates
+<<<<<<< HEAD
                     let x = parts[3].parse::<f64>().map_err(|_| {
                         crate::utils::error::Error::Parse("Invalid X coordinate in CSV".to_string())
                     })?;
                     let y = parts[4].parse::<f64>().map_err(|_| {
                         crate::utils::error::Error::Parse("Invalid Y coordinate in CSV".to_string())
                     })?;
+=======
+                    let x = parts[3]
+                        .parse::<f64>()
+                        .map_err(|_| Error::Parse("Failed to parse X coordinate".to_string()))?;
+                    let y = parts[4]
+                        .parse::<f64>()
+                        .map_err(|_| Error::Parse("Failed to parse Y coordinate".to_string()))?;
+>>>>>>> 880f76a46a2296d3837655370b6aed96e3bf4977
                     pattern.add_stitch_absolute(command, x, y);
                 } else {
                     // Command without stitching (0, 0 position)

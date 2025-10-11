@@ -5,7 +5,11 @@
 
 use crate::core::pattern::EmbPattern;
 use crate::core::thread::EmbThread;
+<<<<<<< HEAD
 use crate::utils::error::Result;
+=======
+use crate::utils::error::{Error, Result};
+>>>>>>> 880f76a46a2296d3837655370b6aed96e3bf4977
 use std::io::Read;
 
 /// Read EDR (Embird Color) format
@@ -32,7 +36,11 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                 break;
             }
             Err(e) => {
+<<<<<<< HEAD
                 return Err(e.into());
+=======
+                return Err(Error::Io(e));
+>>>>>>> 880f76a46a2296d3837655370b6aed96e3bf4977
             }
         }
     }
