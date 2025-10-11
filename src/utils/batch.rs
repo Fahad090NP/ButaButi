@@ -357,17 +357,22 @@ impl BatchConverterExecutor {
                             output_dir.as_deref(),
                             overwrite,
                         );
-                        results_clone.lock().unwrap().add(result);
+                        if let Ok(mut results) = results_clone.lock() {
+                            results.add(result);
+                        }
                     })
                 })
                 .collect();
 
             // Wait for all threads
             for handle in handles {
-                handle.join().unwrap();
+                let _ = handle.join(); // Ignore thread panic errors
             }
 
-            results = Arc::try_unwrap(results_arc).unwrap().into_inner().unwrap();
+            results = Arc::try_unwrap(results_arc)
+                .ok()
+                .and_then(|m| m.into_inner().ok())
+                .unwrap_or_default();
         } else {
             // Sequential processing
             for input_file in input_files {
@@ -491,10 +496,13 @@ impl BatchConverterExecutor {
         target_format: Option<&str>,
         output_dir: Option<&Path>,
     ) -> PathBuf {
-        let file_stem = input_path.file_stem().unwrap();
+        let file_stem = input_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("output");
         let extension = target_format.unwrap_or("dst");
 
-        let output_filename = format!("{}.{}", file_stem.to_string_lossy(), extension);
+        let output_filename = format!("{}.{}", file_stem, extension);
 
         if let Some(dir) = output_dir {
             dir.join(output_filename)

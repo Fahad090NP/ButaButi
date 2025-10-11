@@ -1,5 +1,16 @@
 # ButaButi Copilot Instructions
 
+## Quick Reference (Critical Facts)
+
+- **Always run `.\validate.ps1`** before considering work complete (build + test + clippy + fmt + docs)
+- **Test command**: `cargo test --lib` (NOT `cargo test` - no integration tests)
+- **Coordinate units**: 0.1mm (so `100.0` = 10mm)
+- **Reader pattern**: Mutate existing `EmbPattern` via `pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>`
+- **Binary I/O**: Use `WriteHelper` trait from `formats::io::utils` (auto-implemented for all `Write` types)
+- **No auto-docs**: Never create markdown files after changes unless explicitly requested
+- **Error handling**: Always return `Result`, never `panic!()` in library code
+- **Test isolation**: Use `#[cfg(test)]` modules, test with files from `testing/` directory
+
 ## Overview
 
 ButaButi is a high-performance Rust library for reading, writing, and manipulating embroidery files with full read/write support. Core abstractions: `EmbPattern` (stitch sequences), `EmbThread` (colors), command constants (STITCH, JUMP, TRIM, etc.), and format-specific readers/writers.
@@ -38,10 +49,26 @@ ButaButi is a high-performance Rust library for reading, writing, and manipulati
 
 ### Module Structure
 
-- **`src/core/`** - Core types: `EmbPattern`, `EmbThread`, `EmbMatrix`, `Transcoder`, command constants
-- **`src/formats/io/`** - Format readers (`readers/*.rs`) and writers (`writers/*.rs`)
-- **`src/palettes/`** - Thread color palettes (JEF, PEC, SEW, SHV)
-- **`src/utils/`** - Error handling (`Error`/`Result`), compression, processing utilities, batch conversion
+```
+src/
+├── core/           # Core abstractions
+│   ├── pattern.rs    # EmbPattern (stitches + metadata)
+│   ├── thread.rs     # EmbThread (colors)
+│   ├── constants.rs  # Command bit flags (STITCH, JUMP, TRIM)
+│   ├── encoder.rs    # Transcoder for complex transforms
+│   └── matrix.rs     # Transformation matrices
+├── formats/io/     # Format I/O (15 bidirectional formats)
+│   ├── readers/      # DST, PES, JEF, VP3, EXP, etc.
+│   ├── writers/      # Paired writers + SVG, PNG, TXT
+│   └── utils.rs      # ReadHelper/WriteHelper for binary I/O
+├── palettes/       # Thread color databases
+│   └── thread_*.rs   # JEF, PEC, SEW, SHV brand palettes
+└── utils/          # Cross-cutting concerns
+    ├── error.rs      # Error/Result types
+    ├── batch.rs      # BatchConverter/MultiFormatExporter
+    ├── processing.rs # Pattern utilities (normalize, fix_color_count)
+    └── compress.rs   # Huffman compression (for HUS format)
+```
 
 ### Key Design Patterns
 
@@ -52,6 +79,8 @@ All coordinates in **0.1mm units** (tenths of millimeters). Example: `100.0` = 1
 ```rust
 pattern.stitch(100.0, 0.0);  // Move 10mm right
 ```
+
+**Why 0.1mm?** Industry standard for embroidery machines - allows precise stitch placement without floating-point precision issues.
 
 #### Command System
 
@@ -89,7 +118,18 @@ pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()>
 
 **Why mutation?** Allows reusing pattern buffers in batch processing and avoids cloning large stitch arrays.
 
-**Binary I/O Helpers**: Import `formats::io::utils::WriteHelper` for binary writes - provides methods like `write_u8()`, `write_u16_le()`, `write_string_fixed()` to enforce format-specific requirements.
+**Binary I/O Helpers**: Import `formats::io::utils::WriteHelper` for binary writes - provides methods like `write_u8()`, `write_u16_le()`, `write_string_fixed()` to enforce format-specific requirements. The trait is automatically implemented for any type implementing `std::io::Write`.
+
+```rust
+use crate::formats::io::utils::WriteHelper;
+use std::io::Write;
+
+pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
+    file.write_u16_le(0x1234)?;  // Little-endian u16
+    file.write_string_fixed("DST", 3)?;  // Fixed-length string
+    // ...
+}
+```
 
 #### Pattern Building API
 
@@ -144,25 +184,32 @@ butabuti = { version = "0.1.0", features = ["full"] }  # All features
 1. Create `src/formats/io/readers/formatname.rs`
 2. Implement signature: `pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>`
    - If format needs random access (headers/footers), use `impl Read + Seek`
+   - Pattern is mutated in-place (caller provides empty or pre-initialized pattern)
 3. Parse header → extract metadata → decode stitches → add to pattern
-   - **Critical**: Use `pattern.add_stitch_relative()` for delta-encoded formats
-   - Use `pattern.add_stitch_absolute()` for absolute coordinate formats
+   - **Critical**: Use `pattern.add_stitch_relative()` for delta-encoded formats (DST, PEC, etc.)
+   - Use `pattern.add_stitch_absolute()` for absolute coordinate formats (rare)
    - Add threads via `pattern.add_thread()` as discovered (order matters!)
-   - Extract metadata with `pattern.add_metadata(key, value)` - see DST reader for examples
+   - Extract metadata with `pattern.set_metadata(key, value)` - see DST reader for examples
+   - Pattern tracks `previous_x`/`previous_y` internally for relative stitching
 4. Export in `src/formats/io/readers.rs`: `pub mod formatname;`
 5. Add tests with real file samples from `testing/` directory
+   - Test pattern: `cargo test --lib readers::formatname`
 
 #### Writer Template
 
 1. Create `src/formats/io/writers/formatname.rs`
 2. Implement: `pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()>`
+   - Pattern is immutable (read-only access)
 3. Write header → encode stitches → write footer
    - **Critical**: Most formats require fixed header sizes (DST=512, PES varies by version)
-   - Use `WriteHelper` from `formats::io::utils` for binary writes
+   - Use `WriteHelper` trait from `formats::io::utils` for binary writes
    - Import: `use crate::formats::io::utils::WriteHelper;`
+   - The trait is automatically implemented for any `Write` type
    - Usage: `file.write_u16_le(value)?;` or `file.write_string_fixed("text", 16)?;`
-4. Export in `src/formats/io/writers.rs`
+   - Always check format specs for endianness (LE vs BE)
+4. Export in `src/formats/io/writers.rs`: `pub mod formatname;`
 5. Add round-trip test if reader exists (read → write → read → compare stitch counts)
+   - Test pattern: `cargo test --lib writers::formatname`
 
 ### Format-Specific Encoding
 
@@ -228,10 +275,15 @@ For simple transforms, use pattern methods: `translate()`, `move_center_to_origi
 
 ## Testing Requirements
 
-- All new features need unit tests in cfg(test) modules
+- All new features need unit tests in `#[cfg(test)]` modules
 - Test edge cases: empty patterns, single stitch, invalid data
-- Format readers: test with real file samples from `examples/` or fixtures
-- Round-trip tests: read → write → read → compare
+- Format readers: test with real file samples from `testing/` directory
+- Round-trip tests: read → write → read → compare stitch counts
+- **Critical**: Always run `cargo test --lib` (not `cargo test`) - project has no integration tests
+- Test commands:
+  - `cargo test --lib` - Run all library tests
+  - `cargo test --lib pattern` - Test pattern-related code
+  - `cargo test --lib readers::dst` - Test specific format reader
 
 ## Known Gotchas
 
@@ -305,6 +357,70 @@ let converter = BatchConverter::new()
 let results = converter.convert_all()?;
 results.print_summary();
 ```
+
+### Implementing a new format reader
+
+**Critical workflow**: When adding a new format, you MUST update multiple files in sequence:
+
+1. **Create reader**: `src/formats/io/readers/formatname.rs`
+
+   ```rust
+   use crate::core::pattern::EmbPattern;
+   use crate::utils::error::{Error, Result};
+   use std::io::Read;
+
+   pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
+       // Parse header, decode stitches, populate pattern
+       // Use pattern.add_stitch_relative() for delta formats
+       // Use pattern.set_metadata() to store file metadata
+       Ok(())
+   }
+   ```
+
+2. **Export module**: Add to `src/formats/io/readers.rs`
+
+   ```rust
+   /// FORMATNAME format reader
+   pub mod formatname;
+   ```
+
+3. **Create writer** (if bidirectional): `src/formats/io/writers/formatname.rs`
+
+   ```rust
+   use crate::core::pattern::EmbPattern;
+   use crate::formats::io::utils::WriteHelper;
+   use crate::utils::error::Result;
+   use std::io::Write;
+
+   pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
+       // Write header, encode stitches, write footer
+       // Use WriteHelper methods: file.write_u16_le(), etc.
+       Ok(())
+   }
+   ```
+
+4. **Export writer module**: Add to `src/formats/io/writers.rs`
+
+5. **Add tests**: In both reader and writer files
+
+   ```rust
+   #[cfg(test)]
+   mod tests {
+       use super::*;
+       use crate::core::pattern::EmbPattern;
+       use std::io::Cursor;
+
+       #[test]
+       fn test_read_formatname() {
+           let data = vec![/* test bytes */];
+           let mut pattern = EmbPattern::new();
+           read(&mut Cursor::new(data), &mut pattern).unwrap();
+           assert!(pattern.stitches().len() > 0);
+       }
+   }
+   ```
+
+6. **Run validation**: `.\validate.ps1` must pass with zero errors
 
 ## Do's and Don'ts
 

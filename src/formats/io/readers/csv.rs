@@ -115,7 +115,7 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                             thread.catalog_number = Some(parts[5].to_string());
                         }
                         if parts.len() > 6 && !parts[6].is_empty() {
-                            thread.chart = Some(parts[6].to_string());
+                            thread.brand = Some(parts[6].to_string());
                         }
                         if parts.len() > 7 && !parts[7].is_empty() {
                             thread.chart = Some(parts[7].to_string());

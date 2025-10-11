@@ -291,14 +291,20 @@ impl EmbCompress {
         }
         self.block_elements -= 1;
 
-        let huffman = self.character_huffman.as_ref().unwrap();
+        let huffman = self
+            .character_huffman
+            .as_ref()
+            .expect("Huffman character table not initialized - call load_block first");
         let (value, len) = huffman.lookup(self.peek(16) as u16);
         self.slide(len);
         value
     }
 
     fn get_position(&mut self) -> usize {
-        let huffman = self.distance_huffman.as_ref().unwrap();
+        let huffman = self
+            .distance_huffman
+            .as_ref()
+            .expect("Huffman distance table not initialized - call load_block first");
         let (value, len) = huffman.lookup(self.peek(16) as u16);
         self.slide(len);
 
