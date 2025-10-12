@@ -3,6 +3,35 @@
 //! Provides custom error types with automatic conversions from common error sources
 //! using the thiserror crate for ergonomic error handling throughout the library.
 //!
+//! # Error Context System
+//!
+//! Errors support context tracking via the `ErrorWithContext` trait, allowing you
+//! to build a stack of contextual information as errors propagate up the call stack.
+//!
+//! ```rust
+//! use butabuti::utils::error::{Error, ErrorWithContext};
+//!
+//! fn read_header() -> Result<(), Error> {
+//!     // Error occurs here
+//!     Err(Error::Parse("Invalid magic bytes".to_string()))
+//!         .with_context("Reading DST header at offset 0")
+//! }
+//!
+//! fn read_file() -> Result<(), Error> {
+//!     read_header()
+//!         .with_context("Processing design.dst")?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! The resulting error will display:
+//! ```text
+//! Parse error: Invalid magic bytes
+//! Context (innermost first):
+//!   - Reading DST header at offset 0
+//!   - Processing design.dst
+//! ```
+//!
 //! # Error Type Usage Guidelines
 //!
 //! Choose the appropriate error variant based on the failure context:
@@ -107,48 +136,398 @@
 //! - **Auto-converted**: From `serde_json::Error` via `?` operator
 //! - **Usage**: Generally handled automatically
 
+use std::fmt;
 use std::io;
-use thiserror::Error;
 
-/// Main error type for Rusty Petal operations
-#[derive(Error, Debug)]
-pub enum Error {
+/// Main error type for embroidery operations with context tracking
+#[derive(Debug, Clone)]
+pub struct Error {
+    /// The kind of error that occurred
+    kind: ErrorKind,
+    /// Stack of contextual information (innermost first)
+    context: Vec<String>,
+}
+
+/// Different kinds of errors that can occur
+#[derive(Debug, Clone)]
+pub enum ErrorKind {
     /// I/O error occurred
-    #[error("I/O error: {0}")]
-    Io(#[from] io::Error),
+    Io(String),
 
     /// Error parsing embroidery file
-    #[error("Parse error: {0}")]
     Parse(String),
 
     /// Unsupported file format
-    #[error("Unsupported format: {0}")]
     UnsupportedFormat(String),
 
     /// Invalid pattern data
-    #[error("Invalid pattern: {0}")]
     InvalidPattern(String),
 
     /// Thread index out of bounds
-    #[error("Thread index out of bounds: {0}")]
     ThreadIndexOutOfBounds(usize),
 
     /// Invalid color format
-    #[error("Invalid color format: {0}")]
     InvalidColor(String),
 
     /// Encoding error
-    #[error("Encoding error: {0}")]
     Encoding(String),
 
     /// Unsupported operation
-    #[error("Unsupported operation: {0}")]
     Unsupported(String),
 
     /// JSON serialization/deserialization error
-    #[error("JSON error: {0}")]
-    Json(#[from] serde_json::Error),
+    Json(String),
 }
 
-/// Result type alias for Rusty Petal operations
+impl Error {
+    /// Create a new error with the given kind
+    pub fn new(kind: ErrorKind) -> Self {
+        Self {
+            kind,
+            context: Vec::new(),
+        }
+    }
+
+    /// Create an I/O error
+    pub fn io<S: Into<String>>(msg: S) -> Self {
+        Self::new(ErrorKind::Io(msg.into()))
+    }
+
+    /// Create a parse error
+    pub fn parse<S: Into<String>>(msg: S) -> Self {
+        Self::new(ErrorKind::Parse(msg.into()))
+    }
+
+    /// Create an unsupported format error
+    pub fn unsupported_format<S: Into<String>>(msg: S) -> Self {
+        Self::new(ErrorKind::UnsupportedFormat(msg.into()))
+    }
+
+    /// Create an invalid pattern error
+    pub fn invalid_pattern<S: Into<String>>(msg: S) -> Self {
+        Self::new(ErrorKind::InvalidPattern(msg.into()))
+    }
+
+    /// Create a thread index out of bounds error
+    pub fn thread_index_out_of_bounds(index: usize) -> Self {
+        Self::new(ErrorKind::ThreadIndexOutOfBounds(index))
+    }
+
+    /// Create an invalid color error
+    pub fn invalid_color<S: Into<String>>(msg: S) -> Self {
+        Self::new(ErrorKind::InvalidColor(msg.into()))
+    }
+
+    /// Create an encoding error
+    pub fn encoding<S: Into<String>>(msg: S) -> Self {
+        Self::new(ErrorKind::Encoding(msg.into()))
+    }
+
+    /// Create an unsupported operation error
+    pub fn unsupported<S: Into<String>>(msg: S) -> Self {
+        Self::new(ErrorKind::Unsupported(msg.into()))
+    }
+
+    /// Create a JSON error
+    pub fn json<S: Into<String>>(msg: S) -> Self {
+        Self::new(ErrorKind::Json(msg.into()))
+    }
+
+    /// Get the error kind
+    pub fn kind(&self) -> &ErrorKind {
+        &self.kind
+    }
+
+    /// Get the context stack (innermost first)
+    pub fn context(&self) -> &[String] {
+        &self.context
+    }
+}
+
+/// Trait for adding contextual information to errors
+pub trait ErrorWithContext: Sized {
+    /// Add a context message to this error
+    ///
+    /// Context is added to a stack, with the innermost (most specific)
+    /// context appearing first in the display output.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::utils::error::{Error, ErrorWithContext};
+    ///
+    /// let err = Error::parse("Invalid header")
+    ///     .with_context("Reading DST file at offset 512");
+    ///
+    /// assert_eq!(err.context().len(), 1);
+    /// ```
+    fn with_context<S: Into<String>>(self, ctx: S) -> Self;
+
+    /// Add context if a condition is true
+    ///
+    /// This is useful for conditionally adding context based on runtime conditions.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::utils::error::{Error, ErrorWithContext};
+    ///
+    /// let verbose = true;
+    /// let err = Error::parse("Invalid header")
+    ///     .with_context_if(verbose, "Additional debug info");
+    /// ```
+    fn with_context_if<S: Into<String>>(self, condition: bool, ctx: S) -> Self {
+        if condition {
+            self.with_context(ctx)
+        } else {
+            self
+        }
+    }
+
+    /// Remove all context from this error
+    fn without_context(self) -> Self;
+}
+
+impl ErrorWithContext for Error {
+    fn with_context<S: Into<String>>(mut self, ctx: S) -> Self {
+        self.context.push(ctx.into());
+        self
+    }
+
+    fn without_context(mut self) -> Self {
+        self.context.clear();
+        self
+    }
+}
+
+/// Extension trait for Result types to add context
+pub trait ResultExt<T> {
+    /// Add context to an error if the result is Err
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use butabuti::utils::error::ResultExt;
+    /// use std::fs::File;
+    ///
+    /// let file = File::open("design.dst")
+    ///     .with_context("Opening embroidery file")?;
+    /// # Ok::<(), butabuti::utils::error::Error>(())
+    /// ```
+    fn with_context<S: Into<String>>(self, ctx: S) -> Result<T>;
+}
+
+impl<T> ResultExt<T> for Result<T> {
+    fn with_context<S: Into<String>>(self, ctx: S) -> Result<T> {
+        self.map_err(|e| e.with_context(ctx))
+    }
+}
+
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ErrorKind::Io(msg) => write!(f, "I/O error: {}", msg),
+            ErrorKind::Parse(msg) => write!(f, "Parse error: {}", msg),
+            ErrorKind::UnsupportedFormat(msg) => write!(f, "Unsupported format: {}", msg),
+            ErrorKind::InvalidPattern(msg) => write!(f, "Invalid pattern: {}", msg),
+            ErrorKind::ThreadIndexOutOfBounds(idx) => {
+                write!(f, "Thread index out of bounds: {}", idx)
+            },
+            ErrorKind::InvalidColor(msg) => write!(f, "Invalid color: {}", msg),
+            ErrorKind::Encoding(msg) => write!(f, "Encoding error: {}", msg),
+            ErrorKind::Unsupported(msg) => write!(f, "Unsupported operation: {}", msg),
+            ErrorKind::Json(msg) => write!(f, "JSON error: {}", msg),
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Write the main error message
+        write!(f, "{}", self.kind)?;
+
+        // Add context if present
+        if !self.context.is_empty() {
+            write!(f, "\nContext (innermost first):")?;
+            for (i, ctx) in self.context.iter().enumerate() {
+                write!(f, "\n  {}: {}", i + 1, ctx)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl std::error::Error for Error {}
+
+// Automatic conversions from common error types
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Self::new(ErrorKind::Io(err.to_string()))
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Self::new(ErrorKind::Json(err.to_string()))
+    }
+}
+
+// Convenience constructors that match the old API
+#[allow(non_snake_case)]
+impl Error {
+    /// Create a Parse error (backward compatibility)
+    pub fn Parse(msg: String) -> Self {
+        Self::parse(msg)
+    }
+
+    /// Create an UnsupportedFormat error (backward compatibility)
+    pub fn UnsupportedFormat(msg: String) -> Self {
+        Self::unsupported_format(msg)
+    }
+
+    /// Create an InvalidPattern error (backward compatibility)
+    pub fn InvalidPattern(msg: String) -> Self {
+        Self::invalid_pattern(msg)
+    }
+
+    /// Create a ThreadIndexOutOfBounds error (backward compatibility)
+    pub fn ThreadIndexOutOfBounds(index: usize) -> Self {
+        Self::thread_index_out_of_bounds(index)
+    }
+
+    /// Create an InvalidColor error (backward compatibility)
+    pub fn InvalidColor(msg: String) -> Self {
+        Self::invalid_color(msg)
+    }
+
+    /// Create an Encoding error (backward compatibility)
+    pub fn Encoding(msg: String) -> Self {
+        Self::encoding(msg)
+    }
+
+    /// Create an Unsupported error (backward compatibility)
+    pub fn Unsupported(msg: String) -> Self {
+        Self::unsupported(msg)
+    }
+
+    /// Create an Io error (backward compatibility)
+    pub fn Io(err: io::Error) -> Self {
+        Self::from(err)
+    }
+
+    /// Create a Json error (backward compatibility)
+    pub fn Json(err: serde_json::Error) -> Self {
+        Self::from(err)
+    }
+}
+
+/// Result type alias for embroidery operations
 pub type Result<T> = std::result::Result<T, Error>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_creation() {
+        let err = Error::parse("test error");
+        assert!(matches!(err.kind, ErrorKind::Parse(_)));
+    }
+
+    #[test]
+    fn test_error_with_context() {
+        let err = Error::parse("test error").with_context("outer context");
+        assert_eq!(err.context().len(), 1);
+        assert_eq!(err.context()[0], "outer context");
+    }
+
+    #[test]
+    fn test_error_multiple_context() {
+        let err = Error::parse("test error")
+            .with_context("inner context")
+            .with_context("middle context")
+            .with_context("outer context");
+
+        assert_eq!(err.context().len(), 3);
+        assert_eq!(err.context()[0], "inner context");
+        assert_eq!(err.context()[1], "middle context");
+        assert_eq!(err.context()[2], "outer context");
+    }
+
+    #[test]
+    fn test_error_without_context() {
+        let err = Error::parse("test error")
+            .with_context("context 1")
+            .with_context("context 2")
+            .without_context();
+
+        assert_eq!(err.context().len(), 0);
+    }
+
+    #[test]
+    fn test_error_with_context_if() {
+        let err1 = Error::parse("test").with_context_if(true, "added");
+        assert_eq!(err1.context().len(), 1);
+
+        let err2 = Error::parse("test").with_context_if(false, "not added");
+        assert_eq!(err2.context().len(), 0);
+    }
+
+    #[test]
+    fn test_result_ext() {
+        let result: Result<()> = Err(Error::parse("test error"));
+        let with_ctx = result.with_context("file.dst");
+
+        assert!(with_ctx.is_err());
+        let err = with_ctx.unwrap_err();
+        assert_eq!(err.context().len(), 1);
+        assert_eq!(err.context()[0], "file.dst");
+    }
+
+    #[test]
+    fn test_error_display() {
+        let err = Error::parse("Invalid header")
+            .with_context("Reading DST file")
+            .with_context("Processing design.dst");
+
+        let display = format!("{}", err);
+        assert!(display.contains("Parse error: Invalid header"));
+        assert!(display.contains("Context (innermost first):"));
+        assert!(display.contains("Reading DST file"));
+        assert!(display.contains("Processing design.dst"));
+    }
+
+    #[test]
+    fn test_error_display_no_context() {
+        let err = Error::parse("Invalid header");
+        let display = format!("{}", err);
+        assert!(display.contains("Parse error: Invalid header"));
+        assert!(!display.contains("Context"));
+    }
+
+    #[test]
+    fn test_backward_compat_constructors() {
+        let _ = Error::Parse("msg".to_string());
+        let _ = Error::UnsupportedFormat("msg".to_string());
+        let _ = Error::InvalidPattern("msg".to_string());
+        let _ = Error::ThreadIndexOutOfBounds(5);
+        let _ = Error::InvalidColor("msg".to_string());
+        let _ = Error::Encoding("msg".to_string());
+        let _ = Error::Unsupported("msg".to_string());
+    }
+
+    #[test]
+    fn test_from_io_error() {
+        let io_err = io::Error::new(io::ErrorKind::NotFound, "file not found");
+        let err: Error = io_err.into();
+        assert!(matches!(err.kind, ErrorKind::Io(_)));
+    }
+
+    #[test]
+    fn test_from_json_error() {
+        let json_err = serde_json::from_str::<serde_json::Value>("{invalid").unwrap_err();
+        let err: Error = json_err.into();
+        assert!(matches!(err.kind, ErrorKind::Json(_)));
+    }
+}

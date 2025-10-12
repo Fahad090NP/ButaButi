@@ -142,7 +142,7 @@ fn count_points(pattern: &EmbPattern, trims: bool, trim_at: usize) -> i32 {
             TRIM if trims => point_count += 2 * trim_at as i32,
             COLOR_CHANGE | STOP => point_count += 2,
             END => break,
-            _ => {}
+            _ => {},
         }
     }
 
@@ -240,24 +240,24 @@ pub fn write<W: Write>(
             STITCH => {
                 helper.write_i8(dx as i8)?;
                 helper.write_i8((-dy) as i8)?;
-            }
+            },
             COLOR_CHANGE | STOP => {
                 helper.write_bytes(&[0x80, 0x01])?;
                 helper.write_i8(dx as i8)?;
                 helper.write_i8((-dy) as i8)?;
-            }
+            },
             TRIM if trims => {
                 for _ in 0..trim_at {
                     helper.write_bytes(&[0x80, 0x02, 0x00, 0x00])?;
                 }
-            }
+            },
             JUMP => {
                 helper.write_bytes(&[0x80, 0x02])?;
                 helper.write_i8(dx as i8)?;
                 helper.write_i8((-dy) as i8)?;
-            }
+            },
             END => break,
-            _ => {}
+            _ => {},
         }
     }
 

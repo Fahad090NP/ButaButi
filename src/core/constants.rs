@@ -30,8 +30,23 @@ pub const STITCH: u32 = 0;
 /// Jump command - move without dropping needle
 pub const JUMP: u32 = 1;
 
-/// Trim thread command
+/// Trim thread command - cut thread leaving a tail
+///
+/// This is the standard thread cut used in most embroidery machines.
+/// The thread is cut but a small tail is left for easier threading and to prevent
+/// the thread from pulling through the fabric.
 pub const TRIM: u32 = 2;
+
+/// Cut thread command - full cut with no tail
+///
+/// Some embroidery machines and formats support a stronger cut that leaves no tail.
+/// This is less common than TRIM and may not be supported by all machines.
+/// When not supported, CUT is typically treated the same as TRIM.
+///
+/// **Formats that use CUT**:
+/// - XXX format: 0x88 attribute flag indicates CUT
+/// - HUS format: Separate cut flag in some versions
+pub const CUT: u32 = 0x20;
 
 /// Stop machine command (for applique, thread change, etc.)
 pub const STOP: u32 = 3;
@@ -166,6 +181,140 @@ pub const CONTINGENCY_SEQUIN_REMOVE: u32 = 0xF8;
 /// Generic alternative form flag
 pub const ALTERNATIVE: u32 = 0x100;
 
+/// Categorization of stitch types based on command
+///
+/// This enum provides a high-level categorization of stitch commands,
+/// making it easier to work with patterns without dealing with raw command constants.
+///
+/// # Example
+///
+/// ```
+/// use butabuti::core::constants::StitchType;
+/// use butabuti::core::pattern::Stitch;
+///
+/// let stitch = Stitch::new(10.0, 20.0, butabuti::core::constants::JUMP);
+/// assert_eq!(stitch.stitch_type(), StitchType::Jump);
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum StitchType {
+    /// Normal stitch - move and drop needle
+    Normal,
+    /// Jump stitch - move without dropping needle
+    Jump,
+    /// Trim thread command - cut with tail
+    Trim,
+    /// Cut thread command - full cut with no tail
+    Cut,
+    /// Color change command
+    ColorChange,
+    /// Stop machine command (for applique, manual changes, etc.)
+    Stop,
+    /// End of pattern command
+    End,
+    /// Sequin eject command
+    SequinEject,
+    /// Sequin mode command
+    SequinMode,
+    /// Needle set command (explicit needle selection)
+    NeedleSet,
+    /// Slow speed command
+    Slow,
+    /// Fast speed command
+    Fast,
+    /// Unknown or custom command
+    Unknown,
+}
+
+impl StitchType {
+    /// Get the StitchType from a command value
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::core::constants::{StitchType, JUMP, TRIM};
+    ///
+    /// assert_eq!(StitchType::from_command(JUMP), StitchType::Jump);
+    /// assert_eq!(StitchType::from_command(TRIM), StitchType::Trim);
+    /// ```
+    #[inline]
+    pub fn from_command(command: u32) -> Self {
+        match command & COMMAND_MASK {
+            STITCH => StitchType::Normal,
+            JUMP => StitchType::Jump,
+            TRIM => StitchType::Trim,
+            CUT => StitchType::Cut,
+            COLOR_CHANGE => StitchType::ColorChange,
+            STOP => StitchType::Stop,
+            END => StitchType::End,
+            SEQUIN_EJECT => StitchType::SequinEject,
+            SEQUIN_MODE => StitchType::SequinMode,
+            NEEDLE_SET => StitchType::NeedleSet,
+            SLOW => StitchType::Slow,
+            FAST => StitchType::Fast,
+            _ => StitchType::Unknown,
+        }
+    }
+
+    /// Check if this stitch type represents actual needle movement
+    ///
+    /// Returns true for Normal, Jump, and ColorChange (which includes a stitch)
+    #[inline]
+    pub fn is_movement(&self) -> bool {
+        matches!(
+            self,
+            StitchType::Normal | StitchType::Jump | StitchType::ColorChange
+        )
+    }
+
+    /// Check if this is a thread management command
+    ///
+    /// Returns true for Trim, Cut, ColorChange, and Stop
+    #[inline]
+    pub fn is_thread_command(&self) -> bool {
+        matches!(
+            self,
+            StitchType::Trim | StitchType::Cut | StitchType::ColorChange | StitchType::Stop
+        )
+    }
+
+    /// Check if this is a control command
+    ///
+    /// Returns true for Stop, End, Slow, and Fast
+    #[inline]
+    pub fn is_control(&self) -> bool {
+        matches!(
+            self,
+            StitchType::Stop | StitchType::End | StitchType::Slow | StitchType::Fast
+        )
+    }
+
+    /// Check if this is a sequin-related command
+    #[inline]
+    pub fn is_sequin(&self) -> bool {
+        matches!(self, StitchType::SequinEject | StitchType::SequinMode)
+    }
+}
+
+impl std::fmt::Display for StitchType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StitchType::Normal => write!(f, "Normal"),
+            StitchType::Jump => write!(f, "Jump"),
+            StitchType::Trim => write!(f, "Trim"),
+            StitchType::Cut => write!(f, "Cut"),
+            StitchType::ColorChange => write!(f, "ColorChange"),
+            StitchType::Stop => write!(f, "Stop"),
+            StitchType::End => write!(f, "End"),
+            StitchType::SequinEject => write!(f, "SequinEject"),
+            StitchType::SequinMode => write!(f, "SequinMode"),
+            StitchType::NeedleSet => write!(f, "NeedleSet"),
+            StitchType::Slow => write!(f, "Slow"),
+            StitchType::Fast => write!(f, "Fast"),
+            StitchType::Unknown => write!(f, "Unknown"),
+        }
+    }
+}
+
 /// Get the name of a command constant
 pub fn command_name(command: u32) -> &'static str {
     match command & COMMAND_MASK {
@@ -173,6 +322,7 @@ pub fn command_name(command: u32) -> &'static str {
         STITCH => "STITCH",
         JUMP => "JUMP",
         TRIM => "TRIM",
+        CUT => "CUT",
         STOP => "STOP",
         END => "END",
         COLOR_CHANGE => "COLOR_CHANGE",
@@ -230,6 +380,7 @@ mod tests {
         assert_eq!(command_name(STITCH), "STITCH");
         assert_eq!(command_name(JUMP), "JUMP");
         assert_eq!(command_name(TRIM), "TRIM");
+        assert_eq!(command_name(CUT), "CUT");
     }
 
     #[test]
@@ -243,5 +394,145 @@ mod tests {
     fn test_extract_command() {
         assert_eq!(extract_command(0x12345678), 0x78);
         assert_eq!(extract_command(STITCH), STITCH);
+    }
+
+    // StitchType tests
+    #[test]
+    fn test_stitch_type_from_command() {
+        assert_eq!(StitchType::from_command(STITCH), StitchType::Normal);
+        assert_eq!(StitchType::from_command(JUMP), StitchType::Jump);
+        assert_eq!(StitchType::from_command(TRIM), StitchType::Trim);
+        assert_eq!(StitchType::from_command(CUT), StitchType::Cut);
+        assert_eq!(
+            StitchType::from_command(COLOR_CHANGE),
+            StitchType::ColorChange
+        );
+        assert_eq!(StitchType::from_command(STOP), StitchType::Stop);
+        assert_eq!(StitchType::from_command(END), StitchType::End);
+        assert_eq!(
+            StitchType::from_command(SEQUIN_EJECT),
+            StitchType::SequinEject
+        );
+        assert_eq!(
+            StitchType::from_command(SEQUIN_MODE),
+            StitchType::SequinMode
+        );
+        assert_eq!(StitchType::from_command(NEEDLE_SET), StitchType::NeedleSet);
+        assert_eq!(StitchType::from_command(SLOW), StitchType::Slow);
+        assert_eq!(StitchType::from_command(FAST), StitchType::Fast);
+    }
+
+    #[test]
+    fn test_stitch_type_from_command_with_metadata() {
+        // Commands with upper bits should still extract correctly
+        assert_eq!(StitchType::from_command(0x12345600), StitchType::Normal);
+        assert_eq!(StitchType::from_command(0xFF000001), StitchType::Jump);
+        assert_eq!(StitchType::from_command(0x00FF0002), StitchType::Trim);
+    }
+
+    #[test]
+    fn test_stitch_type_unknown() {
+        assert_eq!(StitchType::from_command(0xFF), StitchType::Unknown);
+        assert_eq!(StitchType::from_command(0x99), StitchType::Unknown);
+    }
+
+    #[test]
+    fn test_stitch_type_is_movement() {
+        assert!(StitchType::Normal.is_movement());
+        assert!(StitchType::Jump.is_movement());
+        assert!(StitchType::ColorChange.is_movement());
+        assert!(!StitchType::Trim.is_movement());
+        assert!(!StitchType::Cut.is_movement());
+        assert!(!StitchType::Stop.is_movement());
+        assert!(!StitchType::End.is_movement());
+    }
+
+    #[test]
+    fn test_stitch_type_is_thread_command() {
+        assert!(StitchType::Trim.is_thread_command());
+        assert!(StitchType::Cut.is_thread_command());
+        assert!(StitchType::ColorChange.is_thread_command());
+        assert!(StitchType::Stop.is_thread_command());
+        assert!(!StitchType::Normal.is_thread_command());
+        assert!(!StitchType::Jump.is_thread_command());
+        assert!(!StitchType::End.is_thread_command());
+    }
+
+    #[test]
+    fn test_stitch_type_is_control() {
+        assert!(StitchType::Stop.is_control());
+        assert!(StitchType::End.is_control());
+        assert!(StitchType::Slow.is_control());
+        assert!(StitchType::Fast.is_control());
+        assert!(!StitchType::Normal.is_control());
+        assert!(!StitchType::Jump.is_control());
+        assert!(!StitchType::Trim.is_control());
+    }
+
+    #[test]
+    fn test_stitch_type_is_sequin() {
+        assert!(StitchType::SequinEject.is_sequin());
+        assert!(StitchType::SequinMode.is_sequin());
+        assert!(!StitchType::Normal.is_sequin());
+        assert!(!StitchType::Jump.is_sequin());
+    }
+
+    #[test]
+    fn test_stitch_type_display() {
+        assert_eq!(format!("{}", StitchType::Normal), "Normal");
+        assert_eq!(format!("{}", StitchType::Jump), "Jump");
+        assert_eq!(format!("{}", StitchType::Trim), "Trim");
+        assert_eq!(format!("{}", StitchType::ColorChange), "ColorChange");
+        assert_eq!(format!("{}", StitchType::Unknown), "Unknown");
+    }
+
+    #[test]
+    fn test_stitch_type_equality() {
+        assert_eq!(StitchType::Normal, StitchType::Normal);
+        assert_ne!(StitchType::Normal, StitchType::Jump);
+
+        // Test with from_command
+        assert_eq!(
+            StitchType::from_command(STITCH),
+            StitchType::from_command(STITCH)
+        );
+        assert_ne!(
+            StitchType::from_command(STITCH),
+            StitchType::from_command(JUMP)
+        );
+    }
+
+    #[test]
+    fn test_cut_command() {
+        // Test CUT constant
+        assert_eq!(CUT, 0x20);
+        assert_eq!(command_name(CUT), "CUT");
+
+        // Test StitchType::Cut
+        assert_eq!(StitchType::from_command(CUT), StitchType::Cut);
+        assert_eq!(format!("{}", StitchType::Cut), "Cut");
+
+        // Test that CUT is a thread command
+        assert!(StitchType::Cut.is_thread_command());
+        assert!(!StitchType::Cut.is_movement());
+        assert!(!StitchType::Cut.is_control());
+        assert!(!StitchType::Cut.is_sequin());
+    }
+
+    #[test]
+    fn test_cut_vs_trim() {
+        // Verify CUT and TRIM are distinct
+        assert_ne!(CUT, TRIM);
+        assert_ne!(StitchType::Cut, StitchType::Trim);
+
+        // Both are thread commands
+        assert!(StitchType::Cut.is_thread_command());
+        assert!(StitchType::Trim.is_thread_command());
+
+        // Test extraction from commands with metadata
+        let cut_with_meta = CUT | 0xFF00;
+        let trim_with_meta = TRIM | 0xFF00;
+        assert_eq!(StitchType::from_command(cut_with_meta), StitchType::Cut);
+        assert_eq!(StitchType::from_command(trim_with_meta), StitchType::Trim);
     }
 }

@@ -1,0 +1,47 @@
+# Clippy configuration for ButaButi
+# https://doc.rust-lang.org/clippy/lint_configuration.html
+
+# Cognitive complexity threshold for functions
+# Default is 25, we use 30 to allow moderately complex format readers/writers
+cognitive-complexity-threshold = 30
+
+# Valid identifiers for documentation
+# Prevents false positives for format names and technical terms
+doc-valid-idents = [
+  "ButaButi",
+  "DST",
+  "PES",
+  "JEF",
+  "VP3",
+  "HUS",
+  "VIP",
+  "EXP",
+  "XXX",
+  "U01",
+  "TBF",
+  "COL",
+  "EDR",
+  "INF",
+  "PEC",
+  "CSV",
+  "JSON",
+  "GCODE",
+  "SVG",
+  "PNG",
+  "Tajima",
+  "Melco",
+  "Janome",
+  "Pfaff",
+  "Brother",
+  "Husqvarna",
+  "Viking",
+  "Barudan",
+  "EmbroiderModder",
+]
+
+# Maximum number of single char bindings in a scope
+single-char-binding-names-threshold = 5
+
+# Maximum allowed size for arrays on the stack
+# Embroidery formats often use fixed-size byte arrays
+array-size-threshold = 512000

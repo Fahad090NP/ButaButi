@@ -9,28 +9,42 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Embroidery thread with color and metadata
+///
+/// Provides comprehensive thread information including color, brand, catalog number,
+/// weight, and extensible metadata via the `attributes` field.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbThread {
     /// Thread color in RGB format (0xRRGGBB)
     pub color: u32,
 
-    /// Thread description/name
+    /// Thread description/name (e.g., "Red", "Cardinal Red")
     pub description: Option<String>,
 
-    /// Catalog/ID number
+    /// Catalog/ID number (e.g., "1234", "5005")
     pub catalog_number: Option<String>,
 
-    /// Additional details
+    /// Additional details (deprecated - use attributes instead)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 
-    /// Brand/manufacturer
+    /// Brand/manufacturer (e.g., "Brother", "Madeira", "Isacord")
     pub brand: Option<String>,
 
-    /// Chart reference
+    /// Chart reference (e.g., "DMC", "Anchor")
     pub chart: Option<String>,
 
-    /// Thread weight
+    /// Thread weight (e.g., "40wt", "60wt", "12wt")
     pub weight: Option<String>,
+
+    /// Extensible metadata for custom thread properties
+    ///
+    /// Use this for any additional thread information like:
+    /// - "type": "rayon", "polyester", "cotton"
+    /// - "sheen": "high", "medium", "matte"
+    /// - "thickness": "0.25mm"
+    /// - "manufacturer_code": "XYZ123"
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub attributes: HashMap<String, String>,
 }
 
 impl EmbThread {
@@ -52,6 +66,7 @@ impl EmbThread {
             brand: None,
             chart: None,
             weight: None,
+            attributes: HashMap::new(),
         }
     }
 
@@ -144,6 +159,252 @@ impl EmbThread {
         self.chart = Some(chart.into());
         self
     }
+
+    /// Builder method: set weight
+    pub fn with_weight(mut self, weight: impl Into<String>) -> Self {
+        self.weight = Some(weight.into());
+        self
+    }
+
+    /// Builder method: add a custom attribute
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rusty_petal::thread::EmbThread;
+    ///
+    /// let thread = EmbThread::new(0xFF0000)
+    ///     .with_attribute("type", "polyester")
+    ///     .with_attribute("sheen", "high");
+    /// ```
+    pub fn with_attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.attributes.insert(key.into(), value.into());
+        self
+    }
+
+    /// Get an attribute value by key
+    pub fn get_attribute(&self, key: &str) -> Option<&str> {
+        self.attributes.get(key).map(|s| s.as_str())
+    }
+
+    /// Set an attribute
+    pub fn set_attribute(&mut self, key: impl Into<String>, value: impl Into<String>) {
+        self.attributes.insert(key.into(), value.into());
+    }
+
+    /// Remove an attribute
+    pub fn remove_attribute(&mut self, key: &str) -> Option<String> {
+        self.attributes.remove(key)
+    }
+
+    /// Check if thread has an attribute
+    pub fn has_attribute(&self, key: &str) -> bool {
+        self.attributes.contains_key(key)
+    }
+
+    /// Get all attribute keys
+    pub fn attribute_keys(&self) -> impl Iterator<Item = &String> {
+        self.attributes.keys()
+    }
+
+    /// Find nearest matching thread in a palette using fuzzy color matching
+    ///
+    /// Returns the index of the closest matching thread based on perceptual color distance
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rusty_petal::thread::EmbThread;
+    ///
+    /// let my_thread = EmbThread::new(0xFF0055);
+    /// let palette = vec![
+    ///     EmbThread::new(0xFF0000).with_description("Red"),
+    ///     EmbThread::new(0x00FF00).with_description("Green"),
+    /// ];
+    ///
+    /// let nearest = my_thread.find_nearest_in_palette(&palette);
+    /// assert_eq!(nearest, Some(0)); // Closest to red
+    /// ```
+    pub fn find_nearest_in_palette(&self, palette: &[EmbThread]) -> Option<usize> {
+        find_nearest_color_index(self.color, palette)
+    }
+
+    /// Find nearest matching thread with a maximum color distance threshold
+    ///
+    /// Returns the index only if the closest match is within the threshold
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rusty_petal::thread::EmbThread;
+    ///
+    /// let my_thread = EmbThread::new(0xFF0055);
+    /// let palette = vec![
+    ///     EmbThread::new(0xFF0000).with_description("Red"),
+    /// ];
+    ///
+    /// // Match if within threshold
+    /// assert!(my_thread.find_nearest_within_threshold(&palette, 10000).is_some());
+    ///
+    /// // No match if threshold too strict
+    /// assert!(my_thread.find_nearest_within_threshold(&palette, 10).is_none());
+    /// ```
+    pub fn find_nearest_within_threshold(
+        &self,
+        palette: &[EmbThread],
+        threshold: u32,
+    ) -> Option<usize> {
+        if palette.is_empty() {
+            return None;
+        }
+
+        let mut closest_index = 0;
+        let mut closest_distance = u32::MAX;
+
+        for (i, thread) in palette.iter().enumerate() {
+            let dist = color_distance(self.color, thread.color);
+            if dist < closest_distance {
+                closest_distance = dist;
+                closest_index = i;
+
+                if dist == 0 {
+                    return Some(closest_index); // Perfect match
+                }
+            }
+        }
+
+        if closest_distance <= threshold {
+            Some(closest_index)
+        } else {
+            None
+        }
+    }
+
+    /// Convert thread color to sRGB color space (0.0-1.0 range)
+    ///
+    /// Returns a palette::Srgb color for color space conversions and accurate color matching.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::prelude::*;
+    ///
+    /// let thread = EmbThread::from_string("red").unwrap();
+    /// let srgb = thread.to_srgb();
+    /// ```
+    pub fn to_srgb(&self) -> palette::Srgb {
+        let r = ((self.color >> 16) & 0xFF) as u8;
+        let g = ((self.color >> 8) & 0xFF) as u8;
+        let b = (self.color & 0xFF) as u8;
+        palette::Srgb::new(
+            f32::from(r) / 255.0,
+            f32::from(g) / 255.0,
+            f32::from(b) / 255.0,
+        )
+    }
+
+    /// Convert thread color to LAB color space for perceptually uniform color matching
+    ///
+    /// LAB color space is better for color distance calculations as it's designed to be
+    /// perceptually uniform (equal distances = equal perceptual differences).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::prelude::*;
+    ///
+    /// let thread = EmbThread::from_string("red").unwrap();
+    /// let lab = thread.to_lab();
+    /// ```
+    pub fn to_lab(&self) -> palette::Lab {
+        use palette::FromColor;
+        palette::Lab::from_color(self.to_srgb())
+    }
+
+    /// Convert thread color to HSL (Hue, Saturation, Lightness) color space
+    ///
+    /// HSL is useful for color manipulation and generating complementary colors.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::prelude::*;
+    ///
+    /// let thread = EmbThread::from_string("red").unwrap();
+    /// let hsl = thread.to_hsl();
+    /// ```
+    pub fn to_hsl(&self) -> palette::Hsl {
+        use palette::FromColor;
+        palette::Hsl::from_color(self.to_srgb())
+    }
+
+    /// Calculate perceptually accurate color distance using DeltaE (CIE76 formula)
+    ///
+    /// Returns the perceptual color difference between this thread and another.
+    /// Lower values mean more similar colors. DeltaE < 1.0 is imperceptible to humans.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::prelude::*;
+    ///
+    /// let red = EmbThread::from_string("FF0000").unwrap();
+    /// let dark_red = EmbThread::from_string("CC0000").unwrap();
+    /// let blue = EmbThread::from_string("0000FF").unwrap();
+    ///
+    /// let dist1 = red.delta_e(&dark_red);
+    /// let dist2 = red.delta_e(&blue);
+    /// assert!(dist1 < dist2); // Red is closer to dark red than to blue
+    /// ```
+    pub fn delta_e(&self, other: &EmbThread) -> f32 {
+        use palette::color_difference::EuclideanDistance;
+        self.to_lab().distance(other.to_lab())
+    }
+
+    /// Find the closest matching thread in a palette using perceptually accurate DeltaE
+    ///
+    /// Uses LAB color space and DeltaE for better color matching than simple RGB distance.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use butabuti::prelude::*;
+    ///
+    /// let my_thread = EmbThread::from_string("FF0055").unwrap();
+    /// let palette = vec![
+    ///     EmbThread::from_string("FF0000").unwrap(), // Red
+    ///     EmbThread::from_string("00FF00").unwrap(), // Green
+    /// ];
+    ///
+    /// let (index, distance) = my_thread.find_closest_delta_e(&palette).unwrap();
+    /// assert_eq!(index, 0); // Closest to red
+    /// ```
+    pub fn find_closest_delta_e(&self, palette: &[EmbThread]) -> Option<(usize, f32)> {
+        if palette.is_empty() {
+            return None;
+        }
+
+        let my_lab = self.to_lab();
+        let mut closest_index = 0;
+        let mut closest_distance = f32::MAX;
+
+        for (i, thread) in palette.iter().enumerate() {
+            let dist = {
+                use palette::color_difference::EuclideanDistance;
+                my_lab.distance(thread.to_lab())
+            };
+            if dist < closest_distance {
+                closest_distance = dist;
+                closest_index = i;
+
+                if dist == 0.0 {
+                    return Some((closest_index, 0.0)); // Perfect match
+                }
+            }
+        }
+
+        Some((closest_index, closest_distance))
+    }
 }
 
 impl Default for EmbThread {
@@ -162,11 +423,24 @@ impl Eq for EmbThread {}
 
 impl std::fmt::Display for EmbThread {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Start with RGB hex value (always shown)
+        write!(f, "Thread({})", self.hex_color())?;
+
+        // Add description if available
         if let Some(ref desc) = self.description {
-            write!(f, "EmbThread {} {}", desc, self.hex_color())
-        } else {
-            write!(f, "EmbThread {}", self.hex_color())
+            write!(f, " - {}", desc)?;
         }
+
+        // Add brand and catalog number if available
+        if let (Some(ref brand), Some(ref catalog)) = (&self.brand, &self.catalog_number) {
+            write!(f, " [{} #{}]", brand, catalog)?;
+        } else if let Some(ref brand) = self.brand {
+            write!(f, " [{}]", brand)?;
+        } else if let Some(ref catalog) = self.catalog_number {
+            write!(f, " [#{}]", catalog)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -193,7 +467,7 @@ pub fn parse_color_hex(hex_string: &str) -> Result<u32> {
             );
             u32::from_str_radix(&expanded, 16)
                 .map_err(|_| Error::InvalidColor(format!("Invalid hex color: {}", hex_string)))
-        }
+        },
         _ => Err(Error::InvalidColor(format!(
             "Invalid hex color length: {}",
             hex_string
@@ -489,5 +763,432 @@ mod tests {
 
         let d2 = color_distance(0xFF0000, 0x00FF00);
         assert!(d2 > 0);
+    }
+
+    // Display trait tests
+    #[test]
+    fn test_thread_display_basic() {
+        let thread = EmbThread::new(0xFF0000);
+        assert_eq!(thread.to_string(), "Thread(#ff0000)");
+    }
+
+    #[test]
+    fn test_thread_display_with_description() {
+        let thread = EmbThread::new(0xFF0000).with_description("Red Thread");
+        assert_eq!(thread.to_string(), "Thread(#ff0000) - Red Thread");
+    }
+
+    #[test]
+    fn test_thread_display_with_brand() {
+        let thread = EmbThread::new(0x0000FF).with_brand("Isacord");
+        assert_eq!(thread.to_string(), "Thread(#0000ff) [Isacord]");
+    }
+
+    #[test]
+    fn test_thread_display_with_catalog() {
+        let thread = EmbThread::new(0x00FF00).with_catalog_number("1234");
+        assert_eq!(thread.to_string(), "Thread(#00ff00) [#1234]");
+    }
+
+    #[test]
+    fn test_thread_display_with_brand_and_catalog() {
+        let thread = EmbThread::new(0xFFFF00)
+            .with_brand("Madeira")
+            .with_catalog_number("5678");
+        assert_eq!(thread.to_string(), "Thread(#ffff00) [Madeira #5678]");
+    }
+
+    #[test]
+    fn test_thread_display_full() {
+        let thread = EmbThread::new(0xFF00FF)
+            .with_description("Magenta")
+            .with_brand("Sulky")
+            .with_catalog_number("1109");
+        assert_eq!(
+            thread.to_string(),
+            "Thread(#ff00ff) - Magenta [Sulky #1109]"
+        );
+    }
+
+    #[test]
+    fn test_thread_display_black() {
+        let thread = EmbThread::new(0x000000).with_description("Black");
+        assert_eq!(thread.to_string(), "Thread(#000000) - Black");
+    }
+
+    #[test]
+    fn test_thread_display_white() {
+        let thread = EmbThread::new(0xFFFFFF).with_description("White");
+        assert_eq!(thread.to_string(), "Thread(#ffffff) - White");
+    }
+
+    // Attribute tests
+    #[test]
+    fn test_thread_with_attribute() {
+        let thread = EmbThread::new(0xFF0000)
+            .with_attribute("type", "polyester")
+            .with_attribute("sheen", "high");
+
+        assert_eq!(thread.get_attribute("type"), Some("polyester"));
+        assert_eq!(thread.get_attribute("sheen"), Some("high"));
+        assert_eq!(thread.get_attribute("nonexistent"), None);
+    }
+
+    #[test]
+    fn test_thread_set_attribute() {
+        let mut thread = EmbThread::new(0xFF0000);
+        thread.set_attribute("type", "cotton");
+        thread.set_attribute("weight", "40wt");
+
+        assert_eq!(thread.get_attribute("type"), Some("cotton"));
+        assert_eq!(thread.get_attribute("weight"), Some("40wt"));
+    }
+
+    #[test]
+    fn test_thread_remove_attribute() {
+        let mut thread = EmbThread::new(0xFF0000).with_attribute("type", "rayon");
+
+        assert!(thread.has_attribute("type"));
+        assert_eq!(thread.remove_attribute("type"), Some("rayon".to_string()));
+        assert!(!thread.has_attribute("type"));
+        assert_eq!(thread.remove_attribute("type"), None);
+    }
+
+    #[test]
+    fn test_thread_attribute_keys() {
+        let thread = EmbThread::new(0xFF0000)
+            .with_attribute("type", "polyester")
+            .with_attribute("sheen", "high")
+            .with_attribute("thickness", "0.25mm");
+
+        let keys: Vec<&String> = thread.attribute_keys().collect();
+        assert_eq!(keys.len(), 3);
+        assert!(keys.contains(&&"type".to_string()));
+        assert!(keys.contains(&&"sheen".to_string()));
+        assert!(keys.contains(&&"thickness".to_string()));
+    }
+
+    #[test]
+    fn test_thread_with_weight() {
+        let thread = EmbThread::new(0xFF0000).with_weight("40wt");
+        assert_eq!(thread.weight, Some("40wt".to_string()));
+    }
+
+    #[test]
+    fn test_thread_attributes_empty_by_default() {
+        let thread = EmbThread::new(0xFF0000);
+        assert_eq!(thread.attributes.len(), 0);
+        assert!(!thread.has_attribute("any_key"));
+    }
+
+    // Fuzzy matching tests
+    #[test]
+    fn test_find_nearest_in_palette() {
+        let my_thread = EmbThread::new(0xFF0055); // Reddish
+        let palette = vec![
+            EmbThread::new(0xFF0000).with_description("Red"),
+            EmbThread::new(0x00FF00).with_description("Green"),
+            EmbThread::new(0x0000FF).with_description("Blue"),
+        ];
+
+        let nearest = my_thread.find_nearest_in_palette(&palette);
+        assert_eq!(nearest, Some(0)); // Closest to red
+    }
+
+    #[test]
+    fn test_find_nearest_perfect_match() {
+        let my_thread = EmbThread::new(0x00FF00);
+        let palette = vec![
+            EmbThread::new(0xFF0000).with_description("Red"),
+            EmbThread::new(0x00FF00).with_description("Green"),
+            EmbThread::new(0x0000FF).with_description("Blue"),
+        ];
+
+        let nearest = my_thread.find_nearest_in_palette(&palette);
+        assert_eq!(nearest, Some(1)); // Perfect match with green
+    }
+
+    #[test]
+    fn test_find_nearest_empty_palette() {
+        let my_thread = EmbThread::new(0xFF0000);
+        let palette: Vec<EmbThread> = vec![];
+
+        let nearest = my_thread.find_nearest_in_palette(&palette);
+        assert_eq!(nearest, None);
+    }
+
+    #[test]
+    fn test_find_nearest_within_threshold() {
+        let my_thread = EmbThread::new(0xFF0055);
+        let palette = vec![
+            EmbThread::new(0xFF0000).with_description("Red"),
+            EmbThread::new(0x00FF00).with_description("Green"),
+        ];
+
+        // Should match red within generous threshold
+        assert!(my_thread
+            .find_nearest_within_threshold(&palette, 100000)
+            .is_some());
+
+        // Should not match with very strict threshold
+        assert!(my_thread
+            .find_nearest_within_threshold(&palette, 10)
+            .is_none());
+    }
+
+    #[test]
+    fn test_find_nearest_within_threshold_perfect_match() {
+        let my_thread = EmbThread::new(0xFF0000);
+        let palette = vec![EmbThread::new(0xFF0000).with_description("Red")];
+
+        // Perfect match works even with threshold 0
+        assert_eq!(
+            my_thread.find_nearest_within_threshold(&palette, 0),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn test_find_nearest_within_threshold_empty_palette() {
+        let my_thread = EmbThread::new(0xFF0000);
+        let palette: Vec<EmbThread> = vec![];
+
+        assert_eq!(
+            my_thread.find_nearest_within_threshold(&palette, 1000),
+            None
+        );
+    }
+
+    #[test]
+    fn test_thread_metadata_combination() {
+        let thread = EmbThread::new(0xFF0000)
+            .with_description("Cardinal Red")
+            .with_brand("Madeira")
+            .with_catalog_number("1147")
+            .with_weight("40wt")
+            .with_attribute("type", "polyester")
+            .with_attribute("sheen", "trilobal");
+
+        assert_eq!(thread.description, Some("Cardinal Red".to_string()));
+        assert_eq!(thread.brand, Some("Madeira".to_string()));
+        assert_eq!(thread.catalog_number, Some("1147".to_string()));
+        assert_eq!(thread.weight, Some("40wt".to_string()));
+        assert_eq!(thread.get_attribute("type"), Some("polyester"));
+        assert_eq!(thread.get_attribute("sheen"), Some("trilobal"));
+    }
+
+    #[test]
+    fn test_thread_serialization_with_attributes() {
+        let thread = EmbThread::new(0xFF0000)
+            .with_description("Red")
+            .with_attribute("type", "polyester");
+
+        let json = serde_json::to_string(&thread).unwrap();
+        let deserialized: EmbThread = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.color, thread.color);
+        assert_eq!(deserialized.description, thread.description);
+        assert_eq!(deserialized.get_attribute("type"), Some("polyester"));
+    }
+
+    #[test]
+    fn test_to_srgb() {
+        let thread = EmbThread::new(0xFF8040); // Orange-ish color
+        let srgb = thread.to_srgb();
+
+        // Check RGB components (0.0-1.0 range)
+        assert!((srgb.red - 1.0).abs() < 0.01); // 0xFF -> 1.0
+        assert!((srgb.green - 0.502).abs() < 0.01); // 0x80 -> ~0.502
+        assert!((srgb.blue - 0.251).abs() < 0.01); // 0x40 -> ~0.251
+    }
+
+    #[test]
+    fn test_to_srgb_pure_colors() {
+        let red = EmbThread::new(0xFF0000);
+        let green = EmbThread::new(0x00FF00);
+        let blue = EmbThread::new(0x0000FF);
+        let black = EmbThread::new(0x000000);
+        let white = EmbThread::new(0xFFFFFF);
+
+        let srgb_red = red.to_srgb();
+        assert!((srgb_red.red - 1.0).abs() < 0.01);
+        assert!(srgb_red.green < 0.01);
+        assert!(srgb_red.blue < 0.01);
+
+        let srgb_green = green.to_srgb();
+        assert!(srgb_green.red < 0.01);
+        assert!((srgb_green.green - 1.0).abs() < 0.01);
+        assert!(srgb_green.blue < 0.01);
+
+        let srgb_blue = blue.to_srgb();
+        assert!(srgb_blue.red < 0.01);
+        assert!(srgb_blue.green < 0.01);
+        assert!((srgb_blue.blue - 1.0).abs() < 0.01);
+
+        let srgb_black = black.to_srgb();
+        assert!(srgb_black.red < 0.01);
+        assert!(srgb_black.green < 0.01);
+        assert!(srgb_black.blue < 0.01);
+
+        let srgb_white = white.to_srgb();
+        assert!((srgb_white.red - 1.0).abs() < 0.01);
+        assert!((srgb_white.green - 1.0).abs() < 0.01);
+        assert!((srgb_white.blue - 1.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_to_lab() {
+        let red = EmbThread::new(0xFF0000);
+        let lab = red.to_lab();
+
+        // LAB color space: L is lightness (0-100), a and b are color opponents
+        // Red should have positive L and positive a (red-green axis)
+        assert!(lab.l > 0.0 && lab.l <= 100.0);
+        assert!(lab.a > 0.0); // Positive a means red
+    }
+
+    #[test]
+    fn test_to_hsl() {
+        let red = EmbThread::new(0xFF0000);
+        let hsl = red.to_hsl();
+
+        // HSL: Hue (0-360), Saturation (0-1), Lightness (0-1)
+        // Pure red should have hue ~0, high saturation, medium lightness
+        assert!(hsl.hue.into_positive_degrees() < 10.0 || hsl.hue.into_positive_degrees() > 350.0);
+        assert!(hsl.saturation > 0.9); // High saturation for pure color
+    }
+
+    #[test]
+    fn test_delta_e_identical_colors() {
+        let thread1 = EmbThread::new(0xFF0000);
+        let thread2 = EmbThread::new(0xFF0000);
+
+        let distance = thread1.delta_e(&thread2);
+        assert!(distance < 0.1); // Should be very close to 0
+    }
+
+    #[test]
+    fn test_delta_e_similar_colors() {
+        let red = EmbThread::new(0xFF0000);
+        let dark_red = EmbThread::new(0xCC0000);
+        let light_red = EmbThread::new(0xFF3333);
+
+        let dist1 = red.delta_e(&dark_red);
+        let dist2 = red.delta_e(&light_red);
+
+        // Both should be relatively close
+        assert!(dist1 < 50.0);
+        assert!(dist2 < 50.0);
+    }
+
+    #[test]
+    fn test_delta_e_different_colors() {
+        let red = EmbThread::new(0xFF0000);
+        let blue = EmbThread::new(0x0000FF);
+
+        let distance = red.delta_e(&blue);
+
+        // Red and blue should be very different
+        assert!(distance > 100.0);
+    }
+
+    #[test]
+    fn test_delta_e_ordering() {
+        let red = EmbThread::new(0xFF0000);
+        let orange = EmbThread::new(0xFF8000);
+        let yellow = EmbThread::new(0xFFFF00);
+        let blue = EmbThread::new(0x0000FF);
+
+        // Red should be closer to orange than to yellow
+        let dist_to_orange = red.delta_e(&orange);
+        let dist_to_yellow = red.delta_e(&yellow);
+        let dist_to_blue = red.delta_e(&blue);
+
+        assert!(dist_to_orange < dist_to_yellow);
+        assert!(dist_to_yellow < dist_to_blue);
+    }
+
+    #[test]
+    fn test_find_closest_delta_e_empty_palette() {
+        let thread = EmbThread::new(0xFF0000);
+        let palette: Vec<EmbThread> = vec![];
+
+        assert!(thread.find_closest_delta_e(&palette).is_none());
+    }
+
+    #[test]
+    fn test_find_closest_delta_e_single_color() {
+        let my_color = EmbThread::new(0xFF0055);
+        let palette = vec![EmbThread::new(0xFF0000)];
+
+        let result = my_color.find_closest_delta_e(&palette);
+        assert!(result.is_some());
+
+        let (index, distance) = result.unwrap();
+        assert_eq!(index, 0);
+        assert!(distance > 0.0); // Not identical but close
+        assert!(distance < 50.0); // Should be reasonably close
+    }
+
+    #[test]
+    fn test_find_closest_delta_e_multiple_colors() {
+        let my_color = EmbThread::new(0xFF0055);
+        let palette = vec![
+            EmbThread::new(0xFF0000), // Red - closest
+            EmbThread::new(0x00FF00), // Green - far
+            EmbThread::new(0x0000FF), // Blue - far
+        ];
+
+        let (index, distance) = my_color.find_closest_delta_e(&palette).unwrap();
+        assert_eq!(index, 0); // Should match red
+        assert!(distance < 50.0); // Should be close to red
+    }
+
+    #[test]
+    fn test_find_closest_delta_e_perfect_match() {
+        let my_color = EmbThread::new(0xFF0000);
+        let palette = vec![
+            EmbThread::new(0x00FF00), // Green
+            EmbThread::new(0xFF0000), // Exact match
+            EmbThread::new(0x0000FF), // Blue
+        ];
+
+        let (index, distance) = my_color.find_closest_delta_e(&palette).unwrap();
+        assert_eq!(index, 1); // Should match exact color
+        assert!(distance < 0.1); // Distance should be nearly zero
+    }
+
+    #[test]
+    fn test_find_closest_delta_e_vs_rgb_distance() {
+        // Test that DeltaE gives better perceptual results than simple RGB distance
+        let my_color = EmbThread::new(0x808080); // Gray
+
+        let palette = vec![
+            EmbThread::new(0x707070), // Slightly darker gray
+            EmbThread::new(0xFF0000), // Red (same distance in some dimensions)
+        ];
+
+        let (index, _) = my_color.find_closest_delta_e(&palette).unwrap();
+        assert_eq!(index, 0); // Should prefer the gray, not red
+    }
+
+    #[test]
+    fn test_color_conversion_roundtrip() {
+        let original = EmbThread::new(0xFF8040);
+
+        // Convert to LAB and back via sRGB
+        let srgb = original.to_srgb();
+        let lab = original.to_lab();
+        let hsl = original.to_hsl();
+
+        // All conversions should produce valid values
+        assert!(srgb.red >= 0.0 && srgb.red <= 1.0);
+        assert!(srgb.green >= 0.0 && srgb.green <= 1.0);
+        assert!(srgb.blue >= 0.0 && srgb.blue <= 1.0);
+
+        assert!(lab.l >= 0.0 && lab.l <= 100.0);
+
+        assert!(hsl.saturation >= 0.0 && hsl.saturation <= 1.0);
+        assert!(hsl.lightness >= 0.0 && hsl.lightness <= 1.0);
     }
 }

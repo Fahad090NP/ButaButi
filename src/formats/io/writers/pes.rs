@@ -66,7 +66,7 @@ fn write_truncated<W: Write + Seek>(
                 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             ])?;
             pec::write_pec_section(w.inner_mut(), pattern)?;
-        }
+        },
         PesVersion::V6 => {
             w.write_string_utf8(PES_VERSION_6_SIGNATURE)?;
             let placeholder_pec_block = w.bytes_written();
@@ -85,7 +85,7 @@ fn write_truncated<W: Write + Seek>(
 
             pec::write_pec_section(w.inner_mut(), pattern)?;
             w.write_i16_le(0x0000)?;
-        }
+        },
     }
 
     Ok(())
@@ -116,10 +116,10 @@ fn write_full<W: Write + Seek>(
     match version {
         PesVersion::V1 => {
             write_pes_header_v1(&mut w, distinct_blocks)?;
-        }
+        },
         PesVersion::V6 => {
             write_pes_header_v6(pattern, &mut w, distinct_blocks)?;
-        }
+        },
     }
 
     if pattern.stitches().is_empty() {
@@ -226,12 +226,12 @@ fn write_pes_string_8<W: Write>(w: &mut WriteHelper<W>, s: Option<&String>) -> R
     match s {
         None => {
             w.write_i8(0)?;
-        }
+        },
         Some(string) => {
             let len = string.len().min(255);
             w.write_i8(len as i8)?;
             w.write_string_utf8(&string[..len])?;
-        }
+        },
     }
     Ok(())
 }
@@ -393,7 +393,7 @@ fn write_pes_embsewseg_segments<W: Write>(
                     w.write_i16_le(-32765)?; // 0x8003 section end
                 }
                 flag = 0;
-            }
+            },
             BlockType::Jump => {
                 segments.push((stitched_x - adjust_x, stitched_y - adjust_y));
                 if let Some(last) = block.last() {
@@ -408,12 +408,12 @@ fn write_pes_embsewseg_segments<W: Write>(
                     w.write_i16_le(-32765)?; // 0x8003 section end
                 }
                 flag = 1;
-            }
+            },
             BlockType::ColorChange => {
                 color_index += 1;
                 current_thread = threads.get(color_index).cloned();
                 continue;
-            }
+            },
             BlockType::Other => continue,
         }
 
@@ -557,11 +557,11 @@ mod tests {
         match pes::read(&mut buffer, &mut read_pattern) {
             Ok(_) => {
                 assert!(!read_pattern.stitches().is_empty(), "No stitches read");
-            }
+            },
             Err(e) => {
                 // For now, just verify the write worked
                 eprintln!("Note: PES read failed (reader may need updating): {:?}", e);
-            }
+            },
         }
     }
 

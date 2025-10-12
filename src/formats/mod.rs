@@ -6,3 +6,6 @@
 
 /// File I/O operations
 pub mod io;
+
+/// Format registry system
+pub mod registry;

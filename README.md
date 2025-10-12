@@ -2,8 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
+[![CI](https://github.com/Fahad090NP/ButaButi/workflows/CI/badge.svg)](https://github.com/Fahad090NP/ButaButi/actions)
+[![codecov](https://codecov.io/gh/Fahad090NP/ButaButi/branch/main/graph/badge.svg)](https://codecov.io/gh/Fahad090NP/ButaButi)
 
-> **Note:** This project is in early stage development. Features and APIs may change. Contributions are welcome!
+> **Note:** This project is in active development. Features and APIs may change. Contributions are welcome!
 
 A high-performance Rust library for reading, writing, and manipulating embroidery machine files. ButaButi supports 15 embroidery file formats with full read/write support, plus additional export formats.
 
@@ -11,12 +13,47 @@ A high-performance Rust library for reading, writing, and manipulating embroider
 
 - **15 Embroidery Formats** - Full bidirectional support (read & write)
 - **Export Formats** - SVG, PNG, TXT for visualization
+- **Color Group Architecture** - Organize threads into logical groups with auto-grouping by color similarity
+- **CLI Tool** - Command-line converter for batch processing and analysis
+- **WebAssembly** (Experimental) - Browser-based file conversion infrastructure (API refinement in progress)
 - **Batch Processing** - Convert multiple files with parallel processing
 - **Pattern Manipulation** - Scale, rotate, translate, and transform designs
 - **Thread Management** - Comprehensive color handling with 140+ named colors
 - **Type Safety** - Leverage Rust's type system for correctness
 
+## Documentation
+
+📚 **[Complete Documentation](https://github.com/Fahad090NP/ButaButi/wiki)** - User guides, tutorials, and examples
+
+- [Installation Guide](https://github.com/Fahad090NP/ButaButi/wiki/Installation) - Setup and dependencies
+- [Quick Start Guide](https://github.com/Fahad090NP/ButaButi/wiki/Quick-Start) - Get started in minutes
+- [API Reference](https://github.com/Fahad090NP/ButaButi/wiki/API-Reference) - Complete API documentation
+- [Format Support](https://github.com/Fahad090NP/ButaButi/wiki/Format-Support) - All supported formats
+- [Examples](https://github.com/Fahad090NP/ButaButi/wiki/Examples) - Code examples and patterns
+- [Features](https://github.com/Fahad090NP/ButaButi/wiki/Features) - Complete feature list
+- [FAQ](https://github.com/Fahad090NP/ButaButi/wiki/FAQ) - Frequently asked questions
+
 ## Quick Start
+
+### Command Line Tool
+
+```bash
+# Install the CLI tool
+cargo install --path . --bin butabuti
+
+# Convert files
+butabuti convert input.dst output.pes
+
+# Show pattern info
+butabuti info design.dst
+
+# Batch convert
+butabuti batch ./input ./output pes
+```
+
+See [docs/CLI.md](docs/CLI.md) for complete CLI documentation.
+
+### Library Usage
 
 Add ButaButi to your `Cargo.toml`:
 
@@ -77,28 +114,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 **Visualization:** SVG (vector graphics), PNG (raster image - requires `graphics` feature), TXT (human-readable)
 
-## Documentation
-
-📚 **[Complete Documentation](https://github.com/Fahad090NP/ButaButi/wiki)**
-
-- [Installation Guide](https://github.com/Fahad090NP/ButaButi/wiki/Installation)
-- [Quick Start Guide](https://github.com/Fahad090NP/ButaButi/wiki/Quick-Start)
-- [API Reference](https://github.com/Fahad090NP/ButaButi/wiki/API-Reference)
-- [Format Support](https://github.com/Fahad090NP/ButaButi/wiki/Format-Support)
-- [Batch Conversion](https://github.com/Fahad090NP/ButaButi/wiki/Batch-Conversion)
-- [Examples](https://github.com/Fahad090NP/ButaButi/wiki/Examples)
-- [FAQ](https://github.com/Fahad090NP/ButaButi/wiki/FAQ)
+See [Format Support](https://github.com/Fahad090NP/ButaButi/wiki/Format-Support) for detailed format information.
 
 ## Examples
 
 See the [Examples wiki page](https://github.com/Fahad090NP/ButaButi/wiki/Examples) for comprehensive examples including:
 
-- Creating patterns (circles, stars, shapes)
+- Creating patterns (circles, stars, shapes, spirals, waves)
+- Using Color Groups to organize threads
 - Reading and writing files
 - Batch conversion
+- Multi-format export
+- Pattern transformations
 - Pattern manipulation
 - Color management
 - Statistics and analysis
+
+Run example programs:
+
+```bash
+# Create basic patterns
+cargo run --example basic_pattern
+
+# Batch conversion
+cargo run --example batch_conversion
+
+# Multi-format export
+cargo run --example multi_format_export
+
+# JSON and processing
+cargo run --example json_and_processing
+```
 
 ## Support
 
@@ -108,4 +154,4 @@ See the [Examples wiki page](https://github.com/Fahad090NP/ButaButi/wiki/Example
 
 ---
 
-Made with 🌸 by the Fahad Iftikhar
+Made with 🌸 by Fahad Iftikhar

@@ -86,13 +86,13 @@ fn process_header_info(pattern: &mut EmbPattern, prefix: &str, value: &str) {
     match prefix {
         "LA" => {
             pattern.add_metadata("name", value);
-        }
+        },
         "AU" => {
             pattern.add_metadata("author", value);
-        }
+        },
         "CP" => {
             pattern.add_metadata("copyright", value);
-        }
+        },
         "TC" => {
             // Thread color: hex, description, catalog
             let parts: Vec<&str> = value.split(',').map(|s| s.trim()).collect();
@@ -112,10 +112,10 @@ fn process_header_info(pattern: &mut EmbPattern, prefix: &str, value: &str) {
 
                 pattern.add_thread(thread);
             }
-        }
+        },
         _ => {
             pattern.add_metadata(prefix, value);
-        }
+        },
     }
 }
 
@@ -185,7 +185,7 @@ fn read_stitches<R: Read>(
 
     loop {
         match reader.read_exact(&mut buffer) {
-            Ok(_) => {}
+            Ok(_) => {},
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(Error::from(e)),
         }

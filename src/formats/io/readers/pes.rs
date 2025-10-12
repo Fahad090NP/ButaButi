@@ -266,47 +266,47 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
         "#PES0100" => {
             pattern.add_metadata("version", "10");
             read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
-        }
+        },
         "#PES0090" => {
             pattern.add_metadata("version", "9");
             read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
-        }
+        },
         "#PES0080" => {
             pattern.add_metadata("version", "8");
             read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
-        }
+        },
         "#PES0070" => {
             pattern.add_metadata("version", "7");
             read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
-        }
+        },
         "#PES0060" => {
             pattern.add_metadata("version", "6");
             read_pes_header_version_6(&mut helper, pattern, &mut loaded_thread_values)?;
-        }
+        },
         "#PES0050" | "#PES0055" | "#PES0056" => {
             pattern.add_metadata("version", "5");
             read_pes_header_version_5(&mut helper, pattern, &mut loaded_thread_values)?;
-        }
+        },
         "#PES0040" => {
             pattern.add_metadata("version", "4");
             read_pes_header_version_4(&mut helper, pattern)?;
-        }
+        },
         "#PES0030" => {
             pattern.add_metadata("version", "3");
-        }
+        },
         "#PES0022" => {
             pattern.add_metadata("version", "2.2");
-        }
+        },
         "#PES0020" => {
             pattern.add_metadata("version", "2");
-        }
+        },
         "#PES0001" => {
             pattern.add_metadata("version", "1");
             read_pes_header_version_1(&mut helper, pattern)?;
-        }
+        },
         _ => {
             // Unknown version, skip header
-        }
+        },
     }
 
     // Seek to PEC block and read it

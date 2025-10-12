@@ -29,11 +29,25 @@ lazy_static = "1.4"
 # Date/time for JEF format
 chrono = "0.4"
 
+# Color space conversions
+palette = "0.7"
+
 # Optional: Image processing for PNG export
 image = { version = "0.25", optional = true }
 
 # Optional: Parallel processing
 rayon = { version = "1.8", optional = true }
+
+# Optional: WASM support
+wasm-bindgen = { version = "0.2", optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+js-sys = { version = "0.3", optional = true }
+
+# Target-specific dependencies (WASM)
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+js-sys = "0.3"
 
 [dev-dependencies]
 # Benchmarking
@@ -42,11 +56,15 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # Testing utilities
 approx = "0.5"
 
+# Property-based testing
+proptest = "1.5"
+
 [features]
 default = []
 graphics = ["image"]
 parallel = ["rayon"]
-full = ["graphics", "parallel"]
+wasm = ["wasm-bindgen", "console_error_panic_hook", "js-sys"]
+full = ["graphics", "parallel", "wasm"]
 
 [profile.release]
 opt-level = 3
@@ -55,3 +73,25 @@ codegen-units = 1
 
 [profile.bench]
 opt-level = 3
+
+[[test]]
+name = "fuzz_formats"
+path = "tests/fuzz_formats.rs"
+harness = true
+
+# Tarpaulin configuration for code coverage
+[package.metadata.tarpaulin]
+# Ignore test files and examples
+ignore-tests = false
+# Include all features in coverage
+all-features = true
+# Timeout for individual tests (seconds)
+timeout = 300
+# Output formats
+out = ["Html", "Xml", "Lcov"]
+# Exclude external dependencies
+exclude-files = ["target/*", "benches/*"]
+# Run tests in single thread for accurate coverage
+run-types = ["Tests", "Doctests"]
+# Count hits rather than just covered/not covered
+count = true

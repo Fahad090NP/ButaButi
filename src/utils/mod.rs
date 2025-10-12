@@ -15,5 +15,11 @@ pub mod error;
 /// Helper functions for encoding/decoding
 pub mod functions;
 
+/// Thread palette management and color library access
+pub mod palette;
+
 /// Pattern processing utilities
 pub mod processing;
+
+/// UTF-8 string utilities for format handling
+pub mod string;

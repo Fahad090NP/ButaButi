@@ -55,3 +55,8 @@ Desktop.ini
 
 # Other Folders
 /inspirations/
+/book/
+
+# Proptest regression test cases SHOULD be committed
+# (see proptest-regressions/README.md for why)
+!/proptest-regressions/

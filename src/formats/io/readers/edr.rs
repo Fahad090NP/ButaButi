@@ -47,14 +47,14 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                 let thread = EmbThread::from_rgb(red, green, blue);
                 pattern.add_thread(thread);
                 thread_count += 1;
-            }
+            },
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
                 // End of file reached
                 break;
-            }
+            },
             Err(e) => {
                 return Err(Error::Io(e));
-            }
+            },
         }
     }
 

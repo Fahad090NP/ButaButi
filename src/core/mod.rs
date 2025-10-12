@@ -5,6 +5,12 @@
 //! This module contains the fundamental types and functionality for working
 //! with embroidery patterns.
 
+/// Pattern collection for multi-pattern files
+pub mod collection;
+
+/// Color group management for organizing threads
+pub mod color_group;
+
 /// Command definitions and constants
 pub mod constants;
 

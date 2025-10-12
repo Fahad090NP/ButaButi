@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ButaButi WASM Demo - Embroidery File Converter</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                overflow: hidden;
+            }
+
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+
+            .header p {
+                font-size: 1.1em;
+                opacity: 0.9;
+            }
+
+            .content {
+                padding: 40px;
+            }
+
+            .card {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 25px;
+                margin-bottom: 25px;
+            }
+
+            .card h2 {
+                color: #667eea;
+                margin-bottom: 20px;
+                font-size: 1.5em;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: #333;
+            }
+
+            input[type="file"] {
+                display: block;
+                width: 100%;
+                padding: 12px;
+                border: 2px dashed #667eea;
+                border-radius: 6px;
+                background: white;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            input[type="file"]:hover {
+                border-color: #764ba2;
+                background: #f8f9fa;
+            }
+
+            select {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 6px;
+                font-size: 1em;
+                background: white;
+                cursor: pointer;
+                transition: border-color 0.3s;
+            }
+
+            select:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+            button {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 14px 32px;
+                font-size: 1.1em;
+                font-weight: 600;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+                display: inline-block;
+                margin-right: 10px;
+            }
+
+            button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            button:active {
+                transform: translateY(0);
+            }
+
+            button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            #output {
+                margin-top: 30px;
+                padding: 20px;
+                background: white;
+                border-radius: 8px;
+                border: 2px solid #e0e0e0;
+            }
+
+            #output.success {
+                border-color: #4caf50;
+                background: #f1f8f4;
+            }
+
+            #output.error {
+                border-color: #f44336;
+                background: #fef1f0;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-top: 20px;
+            }
+
+            .stat-item {
+                background: white;
+                padding: 15px;
+                border-radius: 6px;
+                border-left: 4px solid #667eea;
+            }
+
+            .stat-label {
+                font-size: 0.9em;
+                color: #666;
+                margin-bottom: 5px;
+            }
+
+            .stat-value {
+                font-size: 1.5em;
+                font-weight: 600;
+                color: #333;
+            }
+
+            .color-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-top: 15px;
+            }
+
+            .color-chip {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                background: white;
+                border-radius: 6px;
+                border: 1px solid #e0e0e0;
+            }
+
+            .color-swatch {
+                width: 30px;
+                height: 30px;
+                border-radius: 4px;
+                border: 2px solid #e0e0e0;
+            }
+
+            #svgPreview {
+                width: 100%;
+                max-height: 600px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                background: white;
+                margin-top: 20px;
+            }
+
+            .loading {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top-color: white;
+                animation: spin 1s ease-in-out infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            code {
+                background: #f4f4f4;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-family: "Courier New", monospace;
+            }
+
+            pre {
+                background: #f4f4f4;
+                padding: 15px;
+                border-radius: 6px;
+                overflow-x: auto;
+                margin-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎨 ButaButi WASM Demo</h1>
+                <p>
+                    Convert embroidery files directly in your browser - no
+                    server required!
+                </p>
+            </div>
+
+            <div class="content">
+                <!-- File Upload Section -->
+                <div class="card">
+                    <h2>📁 Upload Embroidery File</h2>
+                    <div class="form-group">
+                        <label for="fileInput"
+                            >Choose an embroidery file (DST, PES, JEF, EXP, VP3,
+                            etc.)</label
+                        >
+                        <input
+                            type="file"
+                            id="fileInput"
+                            accept=".dst,.pes,.jef,.exp,.vp3,.pec,.xxx,.u01,.tbf,.csv,.json"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="outputFormat">Convert to format:</label>
+                        <select id="outputFormat">
+                            <option value="">-- Select format --</option>
+                            <optgroup label="Embroidery Formats">
+                                <option value="dst">DST - Tajima</option>
+                                <option value="pes">PES - Brother</option>
+                                <option value="jef">JEF - Janome</option>
+                                <option value="exp">EXP - Melco</option>
+                                <option value="vp3">VP3 - Pfaff</option>
+                                <option value="pec">PEC - Brother</option>
+                                <option value="xxx">XXX - Singer</option>
+                                <option value="u01">U01 - Barudan</option>
+                                <option value="tbf">TBF - Tajima</option>
+                            </optgroup>
+                            <optgroup label="Export Formats">
+                                <option value="svg" selected>
+                                    SVG - Vector Graphics
+                                </option>
+                                <option value="csv">CSV - Data</option>
+                                <option value="json">JSON - Data</option>
+                                <option value="txt">
+                                    TXT - Human Readable
+                                </option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <button id="convertBtn" disabled>Convert File</button>
+                    <button id="infoBtn" disabled>Get Pattern Info</button>
+                    <button id="previewBtn" disabled>Preview SVG</button>
+                </div>
+
+                <!-- Output Section -->
+                <div id="output" class="hidden"></div>
+            </div>
+        </div>
+
+        <script type="module">
+            // Import WASM module
+            import init, {
+                convert_pattern,
+                get_pattern_info,
+                export_to_svg,
+                list_formats,
+            } from "./pkg/butabuti.js";
+
+            let wasmReady = false;
+            let fileData = null;
+            let fileFormat = null;
+
+            // Initialize WASM
+            async function initWasm() {
+                try {
+                    await init();
+                    wasmReady = true;
+                    console.log("WASM module loaded successfully");
+
+                    // Show supported formats
+                    const formats = JSON.parse(list_formats());
+                    console.log("Supported formats:", formats);
+                } catch (err) {
+                    showError("Failed to load WASM module: " + err.message);
+                    console.error(err);
+                }
+            }
+
+            // File input handler
+            document
+                .getElementById("fileInput")
+                .addEventListener("change", async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    // Detect format from extension
+                    const ext = file.name.split(".").pop().toLowerCase();
+                    fileFormat = ext;
+
+                    // Read file as array buffer
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        fileData = new Uint8Array(e.target.result);
+
+                        // Enable buttons
+                        document.getElementById("convertBtn").disabled = false;
+                        document.getElementById("infoBtn").disabled = false;
+                        document.getElementById("previewBtn").disabled = false;
+
+                        showSuccess(
+                            `File loaded: ${file.name} (${
+                                fileData.length
+                            } bytes, format: ${ext.toUpperCase()})`
+                        );
+                    };
+                    reader.readAsArrayBuffer(file);
+                });
+
+            // Convert button handler
+            document
+                .getElementById("convertBtn")
+                .addEventListener("click", async () => {
+                    if (!wasmReady || !fileData) return;
+
+                    const outputFormat =
+                        document.getElementById("outputFormat").value;
+                    if (!outputFormat) {
+                        showError("Please select an output format");
+                        return;
+                    }
+
+                    try {
+                        showLoading("Converting...");
+
+                        const result = convert_pattern(
+                            fileData,
+                            fileFormat,
+                            outputFormat
+                        );
+
+                        // Create download link
+                        const blob = new Blob([result], {
+                            type: "application/octet-stream",
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `converted.${outputFormat}`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        showSuccess(
+                            `✅ Conversion complete! File downloaded as converted.${outputFormat} (${result.length} bytes)`
+                        );
+                    } catch (err) {
+                        showError("Conversion failed: " + err);
+                    }
+                });
+
+            // Info button handler
+            document
+                .getElementById("infoBtn")
+                .addEventListener("click", async () => {
+                    if (!wasmReady || !fileData) return;
+
+                    try {
+                        showLoading("Analyzing pattern...");
+
+                        const info = JSON.parse(
+                            get_pattern_info(fileData, fileFormat)
+                        );
+
+                        let html = "<h3>📊 Pattern Statistics</h3>";
+                        html += '<div class="stats-grid">';
+                        html += `<div class="stat-item"><div class="stat-label">Stitches</div><div class="stat-value">${info.stitch_count.toLocaleString()}</div></div>`;
+                        html += `<div class="stat-item"><div class="stat-label">Colors</div><div class="stat-value">${info.color_count}</div></div>`;
+                        html += `<div class="stat-item"><div class="stat-label">Color Changes</div><div class="stat-value">${info.color_changes}</div></div>`;
+                        html += `<div class="stat-item"><div class="stat-label">Jumps</div><div class="stat-value">${info.jumps}</div></div>`;
+                        html += `<div class="stat-item"><div class="stat-label">Trims</div><div class="stat-value">${info.trims}</div></div>`;
+                        html += `<div class="stat-item"><div class="stat-label">Width</div><div class="stat-value">${info.width_mm.toFixed(
+                            1
+                        )} mm</div></div>`;
+                        html += `<div class="stat-item"><div class="stat-label">Height</div><div class="stat-value">${info.height_mm.toFixed(
+                            1
+                        )} mm</div></div>`;
+                        html += "</div>";
+
+                        // Color list
+                        if (info.colors && info.colors.length > 0) {
+                            html +=
+                                '<h4 style="margin-top: 25px; margin-bottom: 10px;">Thread Colors</h4>';
+                            html += '<div class="color-list">';
+                            info.colors.forEach((color, idx) => {
+                                const rgb = `rgb(${color.red}, ${color.green}, ${color.blue})`;
+                                html += `<div class="color-chip">`;
+                                html += `<div class="color-swatch" style="background-color: ${rgb}"></div>`;
+                                html += `<span>${idx + 1}. ${
+                                    color.description
+                                }</span>`;
+                                html += `</div>`;
+                            });
+                            html += "</div>";
+                        }
+
+                        // Raw JSON
+                        html += '<h4 style="margin-top: 25px;">Raw Data</h4>';
+                        html += `<pre>${JSON.stringify(info, null, 2)}</pre>`;
+
+                        showSuccess(html);
+                    } catch (err) {
+                        showError("Failed to get pattern info: " + err);
+                    }
+                });
+
+            // Preview button handler
+            document
+                .getElementById("previewBtn")
+                .addEventListener("click", async () => {
+                    if (!wasmReady || !fileData) return;
+
+                    try {
+                        showLoading("Generating SVG preview...");
+
+                        const svg = export_to_svg(fileData, fileFormat);
+
+                        let html = "<h3>🖼️ SVG Preview</h3>";
+                        html += `<div id="svgPreview">${svg}</div>`;
+
+                        showSuccess(html);
+                    } catch (err) {
+                        showError("Failed to generate preview: " + err);
+                    }
+                });
+
+            // Helper functions
+            function showLoading(message) {
+                const output = document.getElementById("output");
+                output.className = "";
+                output.classList.remove("hidden", "error", "success");
+                output.innerHTML = `<div style="text-align: center;"><div class="loading"></div> ${message}</div>`;
+            }
+
+            function showSuccess(html) {
+                const output = document.getElementById("output");
+                output.className = "success";
+                output.classList.remove("hidden");
+                output.innerHTML = html;
+            }
+
+            function showError(message) {
+                const output = document.getElementById("output");
+                output.className = "error";
+                output.classList.remove("hidden");
+                output.innerHTML = `<strong>❌ Error:</strong> ${message}`;
+            }
+
+            // Initialize on page load
+            initWasm();
+        </script>
+    </body>
+</html>

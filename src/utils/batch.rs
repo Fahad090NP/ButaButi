@@ -507,7 +507,7 @@ impl BatchConverterExecutor {
                     duration_ms: duration,
                     file_size,
                 }
-            }
+            },
             Err(e) => ConversionResult::Failed {
                 input: input_path.to_path_buf(),
                 error: e.to_string(),
@@ -691,14 +691,14 @@ impl MultiFormatExporterExecutor {
                         duration_ms: duration,
                         file_size,
                     });
-                }
+                },
                 Err(e) => {
                     results.add(ConversionResult::Failed {
                         input: PathBuf::from(base_name),
                         error: e.to_string(),
                         duration_ms: export_start.elapsed().as_millis(),
                     });
-                }
+                },
             }
         }
 
@@ -723,56 +723,56 @@ fn read_embroidery_file(path: &Path) -> Result<EmbPattern> {
             let mut pattern = EmbPattern::new();
             readers::pes::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "exp" => readers::exp::read(&mut file),
         "jef" => readers::jef::read(&mut file, None),
         "vp3" => {
             let mut pattern = EmbPattern::new();
             readers::vp3::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "pec" => readers::pec::read(&mut file),
         "json" => readers::json::read(&mut file),
         "csv" => {
             let mut pattern = EmbPattern::new();
             readers::csv::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "xxx" => {
             let mut pattern = EmbPattern::new();
             readers::xxx::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "u01" => {
             let mut pattern = EmbPattern::new();
             readers::u01::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "tbf" => {
             let mut pattern = EmbPattern::new();
             readers::tbf::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "col" => {
             let mut pattern = EmbPattern::new();
             readers::col::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "edr" => {
             let mut pattern = EmbPattern::new();
             readers::edr::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "inf" => {
             let mut pattern = EmbPattern::new();
             readers::inf::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         "gcode" => {
             let mut pattern = EmbPattern::new();
             readers::gcode::read(&mut file, &mut pattern)?;
             Ok(pattern)
-        }
+        },
         _ => Err(Error::UnsupportedFormat(format!(
             "Unsupported input format: {}",
             extension
@@ -815,7 +815,7 @@ fn write_embroidery_file(pattern: &EmbPattern, path: &Path) -> Result<()> {
         "svg" => writers::svg::write(pattern, &mut writer).map_err(|e| Error::Parse(e.to_string())),
         "gcode" => {
             writers::gcode::write(pattern, &mut writer).map_err(|e| Error::Parse(e.to_string()))
-        }
+        },
         _ => Err(Error::UnsupportedFormat(format!(
             "Unsupported output format: {}",
             extension

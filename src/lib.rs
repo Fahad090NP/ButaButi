@@ -53,6 +53,10 @@ pub mod formats;
 pub mod palettes;
 pub mod utils;
 
+// WASM bindings (enabled with wasm feature flag)
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
+
 // Re-export commonly used types at the crate root
 pub use core::constants::*;
 pub use core::matrix::EmbMatrix;
@@ -62,14 +66,15 @@ pub use utils::error::Error;
 
 /// Prelude module for convenient imports
 pub mod prelude {
-    pub use crate::core::constants::*;
+    pub use crate::core::constants::{StitchType, *};
     pub use crate::core::matrix::EmbMatrix;
-    pub use crate::core::pattern::EmbPattern;
+    pub use crate::core::pattern::{EmbPattern, StitchCommand};
     pub use crate::core::thread::EmbThread;
     pub use crate::utils::batch::{
         BatchConverter, ConversionResult, ConversionResults, MultiFormatExporter,
     };
     pub use crate::utils::error::*;
+    pub use crate::utils::palette::{PaletteFormat, PaletteLibrary, ThreadPalette};
 }
 
 #[cfg(test)]

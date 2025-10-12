@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 76ad9bdd38fc03e8948c2fbb107d71166c687a4c8153a71dc267a2402ea39f82 # shrinks to mut pattern = EmbPattern { stitches: [Stitch { x: 0.0, y: 5882.344645436395, command: 0 }, Stitch { x: 0.0, y: -5045.485463327414, command: 0 }], thread_list: [], extras: {}, previous_x: 0.0, previous_y: -5045.485463327414 }, max_length = 50.0

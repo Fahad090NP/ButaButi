@@ -118,26 +118,26 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
             // Move (0x7F 01 dx dy)
             0x01 => {
                 pattern.add_stitch_relative(read_signed_i8(b3), -read_signed_i8(b4), JUMP);
-            }
+            },
             // Trim (0x7F 03 dx dy)
             0x03 => {
                 let x = read_signed_i8(b3);
                 let y = -read_signed_i8(b4);
                 pattern.add_stitch_relative(x, y, TRIM);
-            }
+            },
             // Color change (0x7F 08 or 0x7F 0A-17)
             0x08 | 0x0A..=0x17 => {
                 let x = read_signed_i8(b3);
                 let y = -read_signed_i8(b4);
                 pattern.add_stitch_relative(x, y, COLOR_CHANGE);
-            }
+            },
             // End (0x7F 7F or 0x7F 18)
             0x7F | 0x18 => {
                 break;
-            }
+            },
             _ => {
                 // Unknown command, skip
-            }
+            },
         }
     }
 

@@ -15,6 +15,8 @@ pub mod edr;
 pub mod exp;
 /// GCode format reader
 pub mod gcode;
+/// HUS (Husqvarna Viking) format reader
+pub mod hus;
 /// INF (Embroidery Thread Info) format reader
 pub mod inf;
 /// JEF (Janome) format reader

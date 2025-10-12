@@ -2,14 +2,14 @@
 
 ## Quick Reference (Critical Facts)
 
-- **Always run `.\validate.ps1`** before considering work complete (build + test + clippy + fmt + docs)
-- **Test command**: `cargo test --lib` (NOT `cargo test` - no integration tests)
-- **Coordinate units**: 0.1mm (so `100.0` = 10mm)
-- **Reader pattern**: Mutate existing `EmbPattern` via `pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>`
-- **Binary I/O**: Use `WriteHelper` trait from `formats::io::utils` (auto-implemented for all `Write` types)
-- **No auto-docs**: Never create markdown files after changes unless explicitly requested
-- **Error handling**: Always return `Result`, never `panic!()` in library code
-- **Test isolation**: Use cfg(test) modules, test with files from `testing/` directory
+-   **Always run `.\validate.ps1`** before considering work complete (build + test + clippy + fmt + docs)
+-   **Test command**: `cargo test --lib` (NOT `cargo test` - no integration tests)
+-   **Coordinate units**: 0.1mm (so `100.0` = 10mm)
+-   **Reader pattern**: Mutate existing `EmbPattern` via `pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>`
+-   **Binary I/O**: Use `WriteHelper` trait from `formats::io::utils` (auto-implemented for all `Write` types)
+-   **No auto-docs**: Never create markdown files after changes unless explicitly requested
+-   **Error handling**: Always return `Result`, never `panic!()` in library code
+-   **Test isolation**: Use cfg(test) modules, test with files from `testing/` directory
 
 ## Overview
 
@@ -23,27 +23,27 @@ ButaButi is a high-performance Rust library for reading, writing, and manipulati
 
 **Embroidery Formats (14 with full read/write):**
 
-- **DST** - Tajima (most common industrial format)
-- **PES** - Brother
-- **EXP** - Melco
-- **JEF** - Janome
-- **VP3** - Pfaff
-- **PEC** - Brother
-- **XXX** - Singer
-- **U01** - Barudan
-- **TBF** - Tajima
-- **COL** - Thread color list
-- **EDR** - Embird color
-- **INF** - Thread information
-- **JSON** - JSON embroidery data
-- **CSV** - CSV embroidery data
-- **GCODE** - GCODE embroidery data
+-   **DST** - Tajima (most common industrial format)
+-   **PES** - Brother
+-   **EXP** - Melco
+-   **JEF** - Janome
+-   **VP3** - Pfaff
+-   **PEC** - Brother
+-   **XXX** - Singer
+-   **U01** - Barudan
+-   **TBF** - Tajima
+-   **COL** - Thread color list
+-   **EDR** - Embird color
+-   **INF** - Thread information
+-   **JSON** - JSON embroidery data
+-   **CSV** - CSV embroidery data
+-   **GCODE** - GCODE embroidery data
 
 **Export-Only Formats:**
 
-- **SVG** - Scalable vector graphics
-- **PNG** - Raster image (requires `graphics` feature)
-- **TXT** - Human-readable text
+-   **SVG** - Scalable vector graphics
+-   **PNG** - Raster image (requires `graphics` feature)
+-   **TXT** - Human-readable text
 
 ## Architecture
 
@@ -86,8 +86,8 @@ pattern.stitch(100.0, 0.0);  // Move 10mm right
 
 Commands are `u32` bit flags from `core/constants.rs`:
 
-- Low byte (0xFF): Core command (STITCH=0, JUMP=1, TRIM=2, COLOR_CHANGE=5, END=4)
-- Upper 24 bits: Metadata (thread index, needle number, sequencing)
+-   Low byte (0xFF): Core command (STITCH=0, JUMP=1, TRIM=2, COLOR_CHANGE=5, END=4)
+-   Upper 24 bits: Metadata (thread index, needle number, sequencing)
 
 ```rust
 const COMMAND_MASK: u32 = 0x0000_00FF;  // Extract core command
@@ -158,9 +158,9 @@ cargo fmt                     # Format code
 
 **Critical**:
 
-- Always run `cargo test --lib` (not `cargo test`) - project uses library-only tests
-- **Always run `.\validate.ps1` before considering work complete** - this is the authoritative pre-commit check
-- No binary targets (library-only project)
+-   Always run `cargo test --lib` (not `cargo test`) - project uses library-only tests
+-   **Always run `.\validate.ps1` before considering work complete** - this is the authoritative pre-commit check
+-   No binary targets (library-only project)
 
 ### Feature Flags
 
@@ -173,9 +173,9 @@ butabuti = { version = "0.1.0", features = ["graphics", "parallel"] }
 butabuti = { version = "0.1.0", features = ["full"] }  # All features
 ```
 
-- `graphics` - PNG export via `image` crate (adds `writers::png`)
-- `parallel` - Parallel batch processing via `rayon` (speeds up `BatchConverter`)
-- `full` - All optional features enabled
+-   `graphics` - PNG export via `image` crate (adds `writers::png`)
+-   `parallel` - Parallel batch processing via `rayon` (speeds up `BatchConverter`)
+-   `full` - All optional features enabled
 
 ### Adding New Formats
 
@@ -183,33 +183,33 @@ butabuti = { version = "0.1.0", features = ["full"] }  # All features
 
 1. Create `src/formats/io/readers/formatname.rs`
 2. Implement signature: `pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()>`
-   - If format needs random access (headers/footers), use `impl Read + Seek`
-   - Pattern is mutated in-place (caller provides empty or pre-initialized pattern)
+    - If format needs random access (headers/footers), use `impl Read + Seek`
+    - Pattern is mutated in-place (caller provides empty or pre-initialized pattern)
 3. Parse header → extract metadata → decode stitches → add to pattern
-   - **Critical**: Use `pattern.add_stitch_relative()` for delta-encoded formats (DST, PEC, etc.)
-   - Use `pattern.add_stitch_absolute()` for absolute coordinate formats (rare)
-   - Add threads via `pattern.add_thread()` as discovered (order matters!)
-   - Extract metadata with `pattern.set_metadata(key, value)` - see DST reader for examples
-   - Pattern tracks `previous_x`/`previous_y` internally for relative stitching
+    - **Critical**: Use `pattern.add_stitch_relative()` for delta-encoded formats (DST, PEC, etc.)
+    - Use `pattern.add_stitch_absolute()` for absolute coordinate formats (rare)
+    - Add threads via `pattern.add_thread()` as discovered (order matters!)
+    - Extract metadata with `pattern.set_metadata(key, value)` - see DST reader for examples
+    - Pattern tracks `previous_x`/`previous_y` internally for relative stitching
 4. Export in `src/formats/io/readers.rs`: `pub mod formatname;`
 5. Add tests with real file samples from `testing/` directory
-   - Test pattern: `cargo test --lib readers::formatname`
+    - Test pattern: `cargo test --lib readers::formatname`
 
 #### Writer Template
 
 1. Create `src/formats/io/writers/formatname.rs`
 2. Implement: `pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()>`
-   - Pattern is immutable (read-only access)
+    - Pattern is immutable (read-only access)
 3. Write header → encode stitches → write footer
-   - **Critical**: Most formats require fixed header sizes (DST=512, PES varies by version)
-   - Use `WriteHelper` trait from `formats::io::utils` for binary writes
-   - Import: `use crate::formats::io::utils::WriteHelper;`
-   - The trait is automatically implemented for any `Write` type
-   - Usage: `file.write_u16_le(value)?;` or `file.write_string_fixed("text", 16)?;`
-   - Always check format specs for endianness (LE vs BE)
+    - **Critical**: Most formats require fixed header sizes (DST=512, PES varies by version)
+    - Use `WriteHelper` trait from `formats::io::utils` for binary writes
+    - Import: `use crate::formats::io::utils::WriteHelper;`
+    - The trait is automatically implemented for any `Write` type
+    - Usage: `file.write_u16_le(value)?;` or `file.write_string_fixed("text", 16)?;`
+    - Always check format specs for endianness (LE vs BE)
 4. Export in `src/formats/io/writers.rs`: `pub mod formatname;`
 5. Add round-trip test if reader exists (read → write → read → compare stitch counts)
-   - Test pattern: `cargo test --lib writers::formatname`
+    - Test pattern: `cargo test --lib writers::formatname`
 
 ### Format-Specific Encoding
 
@@ -251,8 +251,8 @@ Error::Encoding(msg)          // Encoding/writing errors
 
 `EmbThread::from_string()` accepts hex or named colors:
 
-- `EmbThread::from_string("red")?` - Named color
-- `EmbThread::from_string("FF0000")?` - Hex color (with or without # prefix)
+-   `EmbThread::from_string("red")?` - Named color
+-   `EmbThread::from_string("FF0000")?` - Hex color (with or without # prefix)
 
 ### Pattern Transformations
 
@@ -269,29 +269,29 @@ For simple transforms, use pattern methods: `translate()`, `move_center_to_origi
 
 `utils/processing.rs` provides common operations:
 
-- `normalize(pattern)` - Move pattern to (0,0)
-- `fix_color_count(pattern)` - Add missing threads for color changes
-- `interpolate_trims(pattern, max_jump)` - Convert TRIMs to JUMPs for unsupported formats
+-   `normalize(pattern)` - Move pattern to (0,0)
+-   `fix_color_count(pattern)` - Add missing threads for color changes
+-   `interpolate_trims(pattern, max_jump)` - Convert TRIMs to JUMPs for unsupported formats
 
 ## Testing Requirements
 
-- All new features need unit tests in cfg(test) modules
-- Test edge cases: empty patterns, single stitch, invalid data
-- Format readers: test with real file samples from `testing/` directory
-- Round-trip tests: read → write → read → compare stitch counts
-- **Critical**: Always run `cargo test --lib` (not `cargo test`) - project has no integration tests
-- Test commands:
-  - `cargo test --lib` - Run all library tests
-  - `cargo test --lib pattern` - Test pattern-related code
-  - `cargo test --lib readers::dst` - Test specific format reader
+-   All new features need unit tests in cfg(test) modules
+-   Test edge cases: empty patterns, single stitch, invalid data
+-   Format readers: test with real file samples from `testing/` directory
+-   Round-trip tests: read → write → read → compare stitch counts
+-   **Critical**: Always run `cargo test --lib` (not `cargo test`) - project has no integration tests
+-   Test commands:
+    -   `cargo test --lib` - Run all library tests
+    -   `cargo test --lib pattern` - Test pattern-related code
+    -   `cargo test --lib readers::dst` - Test specific format reader
 
 ## Known Gotchas
 
-- **Coordinates**: Always in 0.1mm units, not pixels or mm
-- **Y-axis**: Some formats flip Y (DST uses `y = -y`), handle in reader/writer
-- **Thread indices**: Start at 0, not 1
-- **Header sizes**: Fixed for many formats (DST=512, PES=48), enforce strictly
-- **Huffman compression**: Required for HUS writer (see `utils/compress.rs`)
+-   **Coordinates**: Always in 0.1mm units, not pixels or mm
+-   **Y-axis**: Some formats flip Y (DST uses `y = -y`), handle in reader/writer
+-   **Thread indices**: Start at 0, not 1
+-   **Header sizes**: Fixed for many formats (DST=512, PES=48), enforce strictly
+-   **Huffman compression**: Required for HUS writer (see `utils/compress.rs`)
 
 ## Common Tasks
 
@@ -364,61 +364,61 @@ results.print_summary();
 
 1. **Create reader**: `src/formats/io/readers/formatname.rs`
 
-   ```rust
-   use crate::core::pattern::EmbPattern;
-   use crate::utils::error::{Error, Result};
-   use std::io::Read;
+    ```rust
+    use crate::core::pattern::EmbPattern;
+    use crate::utils::error::{Error, Result};
+    use std::io::Read;
 
-   pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
-       // Parse header, decode stitches, populate pattern
-       // Use pattern.add_stitch_relative() for delta formats
-       // Use pattern.set_metadata() to store file metadata
-       Ok(())
-   }
-   ```
+    pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
+        // Parse header, decode stitches, populate pattern
+        // Use pattern.add_stitch_relative() for delta formats
+        // Use pattern.set_metadata() to store file metadata
+        Ok(())
+    }
+    ```
 
 2. **Export module**: Add to `src/formats/io/readers.rs`
 
-   ```rust
-   /// FORMATNAME format reader
-   pub mod formatname;
-   ```
+    ```rust
+    /// FORMATNAME format reader
+    pub mod formatname;
+    ```
 
 3. **Create writer** (if bidirectional): `src/formats/io/writers/formatname.rs`
 
-   ```rust
-   use crate::core::pattern::EmbPattern;
-   use crate::formats::io::utils::WriteHelper;
-   use crate::utils::error::Result;
-   use std::io::Write;
+    ```rust
+    use crate::core::pattern::EmbPattern;
+    use crate::formats::io::utils::WriteHelper;
+    use crate::utils::error::Result;
+    use std::io::Write;
 
-   pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
-       // Write header, encode stitches, write footer
-       // Use WriteHelper methods: file.write_u16_le(), etc.
-       Ok(())
-   }
-   ```
+    pub fn write(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
+        // Write header, encode stitches, write footer
+        // Use WriteHelper methods: file.write_u16_le(), etc.
+        Ok(())
+    }
+    ```
 
 4. **Export writer module**: Add to `src/formats/io/writers.rs`
 
 5. **Add tests**: In both reader and writer files
 
-   ```rust
-   // Add cfg(test) attribute to test module
-   mod tests {
-       use super::*;
-       use crate::core::pattern::EmbPattern;
-       use std::io::Cursor;
+    ```rust
+    // Add cfg(test) attribute to test module
+    mod tests {
+        use super::*;
+        use crate::core::pattern::EmbPattern;
+        use std::io::Cursor;
 
-       // Add test attribute to test function
-       fn test_read_formatname() {
-           let data = vec![/* test bytes */];
-           let mut pattern = EmbPattern::new();
-           read(&mut Cursor::new(data), &mut pattern).unwrap();
-           assert!(pattern.stitches().len() > 0);
-       }
-   }
-   ```
+        // Add test attribute to test function
+        fn test_read_formatname() {
+            let data = vec![/* test bytes */];
+            let mut pattern = EmbPattern::new();
+            read(&mut Cursor::new(data), &mut pattern).unwrap();
+            assert!(pattern.stitches().len() > 0);
+        }
+    }
+    ```
 
 6. **Run validation**: `.\validate.ps1` must pass with zero errors
 
@@ -426,37 +426,37 @@ results.print_summary();
 
 ### ✅ DO
 
-- **Run tests after every change**: `cargo test --lib` must pass with 0 failures
-- **Fix clippy warnings**: `cargo clippy -- -D warnings` must produce zero warnings
-- **Format code**: Run `cargo fmt` before committing
-- **Write unit tests**: Every new function/feature needs cfg(test) module tests
-- **Use builder patterns**: For complex configuration (see `BatchConverter`, `MultiFormatExporter`)
-- **Handle errors gracefully**: Use `Result<T>` and proper error messages, never `panic!()` in library code
-- **Document public APIs**: Add doc comments (`///`) for all public functions, structs, and methods
-- **Follow coordinate system**: Always use 0.1mm units (100.0 = 10mm)
-- **Validate inputs**: Check bounds, formats, and preconditions before processing
-- **Update TODOS.md**: Mark features as `[x]` when completed
+-   **Run tests after every change**: `cargo test --lib` must pass with 0 failures
+-   **Fix clippy warnings**: `cargo clippy -- -D warnings` must produce zero warnings
+-   **Format code**: Run `cargo fmt` before committing
+-   **Write unit tests**: Every new function/feature needs cfg(test) module tests
+-   **Use builder patterns**: For complex configuration (see `BatchConverter`, `MultiFormatExporter`)
+-   **Handle errors gracefully**: Use `Result<T>` and proper error messages, never `panic!()` in library code
+-   **Document public APIs**: Add doc comments (`///`) for all public functions, structs, and methods
+-   **Follow coordinate system**: Always use 0.1mm units (100.0 = 10mm)
+-   **Validate inputs**: Check bounds, formats, and preconditions before processing
+-   **Update TODOS.md**: Mark features as `[x]` when completed
 
 ### ❌ DON'T
 
-- **Don't create markdown files automatically**: Documentation files should only be created when explicitly requested
-  - There is a `documentation/` folder for docs - only add files there when instructed
-  - Don't create summary files like `IMPLEMENTATION.md`, `SUMMARY.md`, etc. after changes
-  - README.md and TODOS.md are the only markdown files to update routinely
-- **Don't use `panic!()` in library code**: Always return `Result` with descriptive errors
-- **Don't use `unwrap()` without good reason**: Prefer `?` operator or proper error handling
-- **Don't make breaking API changes**: Maintain backward compatibility for public APIs
-- **Don't skip validation**: Always run `.\validate.ps1` before considering work complete
-- **Don't commit with warnings**: Code must be clippy-clean with `-D warnings`
-- **Don't use magic numbers**: Define constants for format-specific values
-- **Don't forget Y-axis conventions**: Some formats flip Y-coordinates (document this)
-- **Don't mix coordinate systems**: Stick to 0.1mm units throughout
-- **Don't create docs without request**: Wait for explicit instruction to create documentation
+-   **Don't create markdown files automatically**: Documentation files should only be created when explicitly requested
+    -   Wiki documentation lives in `docs/` folder
+    -   Don't create summary files like `IMPLEMENTATION.md`, `SUMMARY.md`, etc. after changes
+    -   README.md, IMPROVEMENTS.md, and TODOS.md are the only markdown files to update routinely
+-   **Don't use `panic!()` in library code**: Always return `Result` with descriptive errors
+-   **Don't use `unwrap()` without good reason**: Prefer `?` operator or proper error handling
+-   **Don't make breaking API changes**: Maintain backward compatibility for public APIs
+-   **Don't skip validation**: Always run `.\validate.ps1` before considering work complete
+-   **Don't commit with warnings**: Code must be clippy-clean with `-D warnings`
+-   **Don't use magic numbers**: Define constants for format-specific values
+-   **Don't forget Y-axis conventions**: Some formats flip Y-coordinates (document this)
+-   **Don't mix coordinate systems**: Stick to 0.1mm units throughout
+-   **Don't create docs without request**: Wait for explicit instruction to create documentation
 
 ## Resources
 
-- Format specs in inline comments (e.g., `readers/dst.rs` documents DST encoding)
-- Thread palettes: `palettes/thread_*.rs` (brand-specific color mappings)
-- TODO list: `TODOS.md` (comprehensive feature roadmap)
-- Contributing guide: `CONTRIBUTING.md` (PR requirements, code standards)
-- Documentation folder: `documentation/` (only add files when explicitly requested)
+-   Format specs in inline comments (e.g., `readers/dst.rs` documents DST encoding)
+-   Thread palettes: `palettes/thread_*.rs` (brand-specific color mappings)
+-   TODO list: `TODOS.md` (comprehensive feature roadmap)
+-   Contributing guide: `CONTRIBUTING.md` (PR requirements, code standards)
+-   Wiki documentation: `docs/` (comprehensive user documentation)
