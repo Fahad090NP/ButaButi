@@ -29,10 +29,6 @@ Cargo.lock
 *.bak
 *.orig
 
-# Documentation
-/docs/
-!/docs/README.md
-
 # Profiling
 flamegraph.svg
 perf.data
