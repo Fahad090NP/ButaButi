@@ -7,14 +7,14 @@ Thank you for your interest in contributing to Butabuti! This document provides 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
 
-   ```bash
+   ```sh
    git clone https://github.com/Fahad090NP/Butabuti.git
    cd Butabuti
    ```
 
 3. **Create a branch** for your changes:
 
-   ```bash
+   ```sh
    git checkout -b feature/your-feature-name
    ```
 
@@ -22,41 +22,24 @@ Thank you for your interest in contributing to Butabuti! This document provides 
 
 ### Prerequisites
 
-- Rust 1.70 or later
+- Love ❤️
+- Rust (latest)
 - Git
 - A code editor (VS Code recommended)
 
 ### Building the Project
 
-```bash
+```sh
 cargo build
 ```
 
 ### Running Tests
 
-```bash
-cargo test --lib
-```
-
-### Code Quality Checks
-
-```bash
-cargo clippy -- -D warnings  # Must pass with zero warnings
-cargo fmt --check            # Check formatting
-cargo fmt                    # Apply formatting
+```sh
+.\validate.ps1 # Must pass with zero warnings
 ```
 
 ## Code Guidelines
-
-### Project Structure
-
-```sh
-src/
-├── core/          # Core types (pattern, thread, matrix, etc.)
-├── formats/       # File I/O (readers and writers)
-├── palettes/      # Thread color palettes
-└── utils/         # Utilities (error, processing, etc.)
-```
 
 ### Coding Standards
 
@@ -65,15 +48,10 @@ src/
 3. **Document public APIs** - Use doc comments (`///`) for public items
 4. **Handle errors gracefully** - Return `Result`, don't panic in library code
 5. **Keep functions focused** - Small, single-purpose functions
-6. **Prefer descriptive file names** - Use compound names for clarity (e.g., `stitch_renderer.rs` over `renderer.rs`)
+6. **Prefer small file names** - Use compound names for clarity (e.g., `renderer.rs` over `stitch_renderer.rs`)
 7. **Always validate before commit** - Run `.\validate.ps1` (or `cargo test --lib && cargo clippy -- -D warnings && cargo fmt`) before pushing
 
 ### File Naming Conventions
-
-**Prefer descriptive compound names** when parent folder context is insufficient:
-
-- ✅ **GOOD**: `stitch_renderer.rs`, `color_group.rs`, `batch_converter.rs`
-- ❌ **BAD**: `renderer.rs`, `group.rs`, `converter.rs`
 
 **Single words acceptable when:**
 
@@ -84,20 +62,6 @@ src/
 **Rationale**: Descriptive names improve searchability, reduce false positives in grep/IDE search, and make intent immediately clear.
 
 ### File Organization Principles
-
-**Keep files separate when:**
-
-- Over 300 lines
-- Independent functionality
-- Different test requirements
-- Distinct conceptual boundaries
-
-**Consider merging when:**
-
-- Under 200 lines each
-- Tightly coupled functionality
-- Shared test fixtures
-- Can't exist independently
 
 **Current files are well-organized** - avoid unnecessary refactoring unless clear benefit.
 
@@ -121,7 +85,7 @@ src/
 
 ```markdown
 - [ ] Update wiki documentation for new feature X
-- [ ] Document format Y in Format-Support.md
+- [x] Document format Y in Format-Support.md
 - [ ] Add example for use case Z to Examples.md
 ```
 
@@ -149,15 +113,13 @@ use crate::formats::io::readers;
 2. **Update documentation** - Keep README and docs current
 3. **Run quality checks**:
 
-   ```bash
-   cargo test --lib
-   cargo clippy -- -D warnings
-   cargo fmt
+   ```sh
+   .\validate.ps1
    ```
 
 4. **Write clear commit messages**:
 
-   ```sh
+   ```txt
    Add SVG writer with gradient support
 
    - Implements SVG export with scalable vector graphics
@@ -189,12 +151,10 @@ use crate::formats::io::readers;
 
 Before submitting, ensure:
 
-- [ ] All tests pass (`cargo test --lib`)
-- [ ] No clippy warnings (`cargo clippy -- -D warnings`)
-- [ ] Code is formatted (`cargo fmt`)
+- [ ] All tests pass (`.\validate.ps1`)
 - [ ] Public APIs are documented
 - [ ] New features have tests
-- [ ] Commit messages are clear
+- [ ] Commit messages are clear (prefer capital case like 'New Feature Added')
 - [ ] No breaking changes (or clearly documented)
 
 ## Getting Help
@@ -217,5 +177,3 @@ By contributing, you agree that your contributions will be licensed under the MI
 ---
 
 Thank you for contributing to Butabuti! 🌸
-
-This project is actively maintained by [Fahad Iftikhar](https://github.com/Fahad090NP).

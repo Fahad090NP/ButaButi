@@ -555,6 +555,8 @@
 
 ### Wiki Documentation
 
+- [ ] Create CLI.md documentation page for Wiki
+
 - [ ] **Create Examples Gallery page**
   - Showcase real-world patterns with before/after conversions
   - Include code samples for common use cases

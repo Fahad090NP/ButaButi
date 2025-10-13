@@ -4,6 +4,7 @@ As contributors and maintainers of the Butabuti project, and in the interest of 
 
 ## Our Standards
 
+- Butabuti is primiraly delivering LOVE not a Rust library
 - Be respectful and considerate in all interactions
 - Use inclusive language and avoid discriminatory remarks
 - Accept constructive criticism gracefully

@@ -25,7 +25,7 @@
 //! ```
 //!
 //! The resulting error will display:
-//! ```text
+//! ```txt
 //! Parse error: Invalid magic bytes
 //! Context (innermost first):
 //!   - Reading DST header at offset 0

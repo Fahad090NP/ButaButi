@@ -90,7 +90,7 @@ Navigate to: `http://localhost:8000`
 
 The original app.ts was compiled to app.js using:
 
-```bash
+```sh
 npx tsc app.ts --target ES2020 --module ES2020 --lib ES2020,DOM --skipLibCheck
 ```
 

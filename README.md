@@ -2,12 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
-[![CI](https://github.com/Fahad090NP/Butabuti/workflows/CI/badge.svg)](https://github.com/Fahad090NP/Butabuti/actions)
-[![codecov](https://codecov.io/gh/Fahad090NP/Butabuti/branch/main/graph/badge.svg)](https://codecov.io/gh/Fahad090NP/Butabuti)
 
 > **Note:** This project is in active development. Features and APIs may change. Contributions are welcome!
 
-A high-performance Rust library for reading, writing, and manipulating embroidery machine files. Butabuti supports 15 embroidery file formats with full read/write support, plus additional export formats.
+A high-performance Rust library for reading, writing, and manipulating embroidery machine files. Butabuti supports 15 embroidery file formats with full read/write support, plus additional import formats.
 
 ## Features
 
@@ -16,11 +14,10 @@ A high-performance Rust library for reading, writing, and manipulating embroider
 - **Realistic Stitch Rendering** - High-quality SVG export with gradient stitches and rotation
 - **Color Group Architecture** - Organize threads into logical groups with auto-grouping by color similarity
 - **CLI Tool** - Command-line converter for batch processing and analysis
-- **WebAssembly** (Experimental) - Browser-based file conversion infrastructure (API refinement in progress)
+- **WebAssembly** - Browser-based file conversion infrastructure
 - **Batch Processing** - Convert multiple files with parallel processing
 - **Pattern Manipulation** - Scale, rotate, translate, and transform designs
 - **Thread Management** - Comprehensive color handling with 140+ named colors
-- **Type Safety** - Leverage Rust's type system for correctness
 
 ## Documentation
 
@@ -38,7 +35,7 @@ A high-performance Rust library for reading, writing, and manipulating embroider
 
 ### Command Line Tool
 
-```bash
+```sh
 # Install the CLI tool
 cargo install --path . --bin butabuti
 
@@ -52,16 +49,7 @@ butabuti info design.dst
 butabuti batch ./input ./output pes
 ```
 
-See [docs/CLI.md](docs/CLI.md) for complete CLI documentation.
-
-### Library Usage
-
-Add Butabuti to your `Cargo.toml`:
-
-```toml
-[dependencies]
-butabuti = "0.1.0"
-```
+See [docs/CLI.md](https://github.com/Fahad090NP/Butabuti/wiki/CLI) for complete CLI documentation.
 
 ### Create a Pattern
 
@@ -133,7 +121,7 @@ See the [Examples wiki page](https://github.com/Fahad090NP/Butabuti/wiki/Example
 
 Run example programs:
 
-```bash
+```sh
 # Create basic patterns
 cargo run --example basic_pattern
 
@@ -155,4 +143,4 @@ cargo run --example json_and_processing
 
 ---
 
-Made with 🌸 by Fahad Iftikhar
+This project is actively maintained by Fahad Iftikhar. [Contact me](mailto:fahad090np@gmail.com) personally if any problem.

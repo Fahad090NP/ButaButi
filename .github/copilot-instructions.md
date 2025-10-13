@@ -150,7 +150,7 @@ cargo fmt                     # Format code
 
 The CLI binary in `src/bin/butabuti.rs` provides command-line utilities:
 
-```bash
+```sh
 # Convert between formats
 cargo run --bin butabuti -- convert input.dst output.pes
 
