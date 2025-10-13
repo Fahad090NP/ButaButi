@@ -99,11 +99,11 @@ impl<T: Read> Iterator for ReadByteIterator<T> {
                 self.error = Some(error);
                 self.close();
                 None
-            },
+            }
             None => {
                 self.close();
                 None
-            },
+            }
         }
     }
 }

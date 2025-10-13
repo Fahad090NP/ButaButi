@@ -130,7 +130,7 @@ pub fn write_with_settings(
                     cmd |= 0x04;
                 }
                 file.write_all(&[cmd, delta_y, delta_x])?;
-            },
+            }
             JUMP => {
                 if trigger_fast {
                     trigger_fast = false;
@@ -142,15 +142,15 @@ pub fn write_with_settings(
                 }
                 cmd |= 0x01;
                 file.write_all(&[cmd, delta_y, delta_x])?;
-            },
+            }
             STOP => {
                 cmd |= 0x08;
                 file.write_all(&[cmd, delta_y, delta_x])?;
-            },
+            }
             TRIM => {
                 cmd |= 0x07;
                 file.write_all(&[cmd, delta_y, delta_x])?;
-            },
+            }
             NEEDLE_SET => {
                 let decoded = decode_embroidery_command(stitch.command);
                 let mut needle = decoded.2.unwrap_or(1);
@@ -160,11 +160,11 @@ pub fn write_with_settings(
                 cmd |= 0x08;
                 cmd += needle as u8;
                 file.write_all(&[cmd, delta_y, delta_x])?;
-            },
+            }
             END => {
                 break;
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 

@@ -189,6 +189,7 @@
 - [x] Basic WASM bindings for format conversion
 - [x] Pattern info extraction in browser
 - [x] SVG export for visualization
+- [x] SVG export with quality levels (low, medium, high, ultra)
 - [x] Format listing API (uses FormatRegistry)
 - [x] Programmatic format population in HTML
 - [ ] Batch conversion API in WASM
@@ -199,15 +200,17 @@
 
 ### User Interface Improvements
 
-- [ ] Add drag-and-drop file upload
+- [x] Add drag-and-drop file upload
+- [x] Add file format auto-detection
+- [x] Add download progress indicator
+- [x] Add loading states and error handling
+- [x] Add helpful error messages with troubleshooting
 - [ ] Add multi-file selection and batch processing
-- [ ] Add file format auto-detection
-- [ ] Add download progress indicator
 - [ ] Add conversion queue management
 - [ ] Add recent conversions history (localStorage)
 - [ ] Add format presets (common conversions)
 - [ ] Add keyboard shortcuts
-- [ ] Add mobile-responsive design improvements
+- [x] Add mobile-responsive design improvements
 - [ ] Add pattern zoom and pan controls
 - [ ] Add print-friendly SVG export option
 

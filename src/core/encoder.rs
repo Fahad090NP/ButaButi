@@ -129,10 +129,10 @@ impl Transcoder {
             match command {
                 STITCH => {
                     self.handle_stitch(destination, &mut current_x, &mut current_y, x, y)?;
-                },
+                }
                 JUMP => {
                     self.handle_move(destination, &mut current_x, &mut current_y, x, y)?;
-                },
+                }
                 COLOR_CHANGE => {
                     if self.settings.explicit_trim {
                         destination.add_command(TRIM, current_x, current_y);
@@ -140,12 +140,12 @@ impl Transcoder {
                     destination.add_command(command, x, y);
                     current_x = x;
                     current_y = y;
-                },
+                }
                 NEEDLE_SET => {
                     destination.add_command(command, x, y);
                     current_x = x;
                     current_y = y;
-                },
+                }
                 _ => {
                     // Handle other commands
                     if command == SEQUIN_MODE || command == SEQUIN_EJECT {
@@ -158,7 +158,7 @@ impl Transcoder {
                     }
                     current_x = x;
                     current_y = y;
-                },
+                }
             }
         }
 
@@ -192,15 +192,15 @@ impl Transcoder {
                     // Jump to position with needle
                     self.handle_move(destination, current_x, current_y, target_x, target_y)?;
                     destination.add_stitch_absolute(STITCH, target_x, target_y);
-                },
+                }
                 CONTINGENCY_LONG_STITCH_SEW_TO => {
                     // Sew incrementally to target
                     self.sew_to(destination, current_x, current_y, target_x, target_y)?;
-                },
+                }
                 _ => {
                     // Default: just add the stitch
                     destination.add_stitch_absolute(STITCH, target_x, target_y);
-                },
+                }
             }
         } else {
             destination.add_stitch_absolute(STITCH, target_x, target_y);
@@ -305,25 +305,25 @@ impl Transcoder {
             CONTINGENCY_SEQUIN_UTILIZE => {
                 // Use sequin commands as-is
                 destination.add_command(command, x, y);
-            },
+            }
             CONTINGENCY_SEQUIN_JUMP => {
                 // Convert sequin to jump
                 if command == SEQUIN_EJECT {
                     destination.add_command(TRIM, x, y);
                 }
-            },
+            }
             CONTINGENCY_SEQUIN_STITCH => {
                 // Convert sequin to stitch
                 if command == SEQUIN_EJECT {
                     destination.add_stitch_absolute(STITCH, x, y);
                 }
-            },
+            }
             CONTINGENCY_SEQUIN_REMOVE => {
                 // Simply ignore sequin commands
-            },
+            }
             _ => {
                 destination.add_command(command, x, y);
-            },
+            }
         }
         Ok(())
     }

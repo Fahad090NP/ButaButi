@@ -136,29 +136,29 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
             0x80 => {
                 // STITCH
                 pattern.add_stitch_relative(x, y, STITCH);
-            },
+            }
             0x81 => {
                 // JUMP (move)
                 pattern.add_stitch_relative(x, y, JUMP);
-            },
+            }
             0x84 => {
                 // COLOR_CHANGE
                 if x != 0.0 || y != 0.0 {
                     pattern.add_stitch_relative(x, y, STITCH);
                 }
                 pattern.add_command(COLOR_CHANGE, 0.0, 0.0);
-            },
+            }
             0x88 => {
                 // TRIM
                 if x != 0.0 || y != 0.0 {
                     pattern.add_stitch_relative(x, y, JUMP);
                 }
                 pattern.add_command(TRIM, 0.0, 0.0);
-            },
+            }
             0x90 => {
                 // END
                 break;
-            },
+            }
             _ => {
                 // Unknown command - log warning and stop
                 return Err(crate::utils::error::Error::parse(format!(
@@ -166,7 +166,7 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
                     cmd, i
                 ))
                 .with_context("Processing HUS stitches"));
-            },
+            }
         }
     }
 
@@ -384,13 +384,13 @@ mod tests {
             match cmd_byte {
                 0x80 | 0x81 | 0x84 | 0x88 | 0x90 => {
                     println!("✓ Command {} (0x{:02X}) is recognized", cmd_name, cmd_byte);
-                },
+                }
                 _ => {
                     panic!(
                         "Command {} (0x{:02X}) is not in match statement",
                         cmd_name, cmd_byte
                     );
-                },
+                }
             }
         }
 

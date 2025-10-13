@@ -37,7 +37,7 @@ fn read_stitches<R: Read>(
 
     loop {
         match reader.read_exact(&mut buffer) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(Error::from(e)),
         }
@@ -63,7 +63,7 @@ fn read_stitches<R: Read>(
 
         // Read next 2 bytes for coordinates
         match reader.read_exact(&mut buffer) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(Error::from(e)),
         }
@@ -75,7 +75,7 @@ fn read_stitches<R: Read>(
             0x02 => {
                 // Jump/Move
                 pattern.jump(x, y);
-            },
+            }
             0x01 => {
                 // Color change
                 // Check if this is a stop (color index 0 means None)
@@ -85,15 +85,15 @@ fn read_stitches<R: Read>(
                 } else {
                     pattern.stop();
                 }
-            },
+            }
             0x10 => {
                 // End pattern
                 break;
-            },
+            }
             _ => {
                 // Uncaught control - break
                 break;
-            },
+            }
         }
     }
 

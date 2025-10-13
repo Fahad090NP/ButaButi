@@ -44,20 +44,20 @@ fn main() -> Result<()> {
                             file_size / 1024,
                             duration_ms
                         );
-                    },
+                    }
                     ConversionResult::Failed { input, error, .. } => {
                         println!("  ✗ {} - Error: {}", input.display(), error);
-                    },
+                    }
                     ConversionResult::Skipped { input, reason } => {
                         println!("  ⊘ {} - Skipped: {}", input.display(), reason);
-                    },
+                    }
                 }
             }
-        },
+        }
         Err(e) => {
             eprintln!("Error during batch conversion: {}", e);
             return Err(e);
-        },
+        }
     }
 
     println!("\n");
@@ -83,10 +83,10 @@ fn main() -> Result<()> {
         Ok(results) => {
             println!("\n✓ Batch conversion completed!");
             results.print_summary();
-        },
+        }
         Err(e) => {
             eprintln!("Error: {}", e);
-        },
+        }
     }
 
     println!("\n");
@@ -115,10 +115,10 @@ fn main() -> Result<()> {
                 results.failed_count(),
                 results.skipped_count()
             );
-        },
+        }
         Err(e) => {
             eprintln!("Error: {}", e);
-        },
+        }
     }
 
     Ok(())

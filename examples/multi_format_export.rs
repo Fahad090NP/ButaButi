@@ -52,11 +52,11 @@ fn main() -> Result<()> {
                     println!("  ✓ {} ({} KB)", output.display(), file_size / 1024);
                 }
             }
-        },
+        }
         Err(e) => {
             eprintln!("Error during export: {}", e);
             return Err(e);
-        },
+        }
     }
 
     println!("\n");
@@ -80,10 +80,10 @@ fn main() -> Result<()> {
                 results.success_count(),
                 results.total_output_size() as f64 / 1_048_576.0
             );
-        },
+        }
         Err(e) => {
             eprintln!("Error: {}", e);
-        },
+        }
     }
 
     println!("\n");
@@ -106,10 +106,10 @@ fn main() -> Result<()> {
         Ok(results) => {
             println!("\n✓ Modified pattern exported!");
             println!("Success rate: {:.1}%", results.success_rate() * 100.0);
-        },
+        }
         Err(e) => {
             eprintln!("Error: {}", e);
-        },
+        }
     }
 
     println!("\n=== All exports completed successfully! ===");

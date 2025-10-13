@@ -101,14 +101,14 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                     // Command without stitching (0, 0 position)
                     pattern.add_command(command, 0.0, 0.0);
                 }
-            },
+            }
 
             // Metadata line: @,key,value
             s if s.starts_with('@') => {
                 if parts.len() >= 3 {
                     pattern.add_metadata(parts[1], parts[2]);
                 }
-            },
+            }
 
             // Thread line: $,index,color[,description,brand,catalog,details,weight]
             s if s.starts_with('$') => {
@@ -174,7 +174,7 @@ pub fn read(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                 }
 
                 pattern.add_thread(thread);
-            },
+            }
 
             _ => continue,
         }

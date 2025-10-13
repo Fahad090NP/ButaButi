@@ -165,28 +165,28 @@ fn write_stitches(pattern: &EmbPattern, file: &mut impl Write, stitch_z_travel: 
                 writeln!(file, "G00 X{:.3} Y{:.3}", x, y)?;
                 writeln!(file, "G00 Z{:.1}", z)?;
                 z += stitch_z_travel;
-            },
+            }
             JUMP => {
                 // Jumps are just skipped in G-code
                 continue;
-            },
+            }
             TRIM => {
                 // Trims are skipped
                 continue;
-            },
+            }
             COLOR_CHANGE | STOP => {
                 // M00 - Program stop (for color change)
                 writeln!(file, "M00")?;
-            },
+            }
             END => {
                 // M30 - Program end
                 writeln!(file, "M30")?;
                 break;
-            },
+            }
             _ => {
                 // Unknown commands are skipped
                 continue;
-            },
+            }
         }
     }
 

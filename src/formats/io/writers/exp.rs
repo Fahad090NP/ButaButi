@@ -33,7 +33,7 @@ pub fn write<W: Write>(writer: &mut W, pattern: &EmbPattern) -> Result<()> {
                 let delta_y = ((-dy) & 0xFF) as u8;
                 helper.write_u8(delta_x)?;
                 helper.write_u8(delta_y)?;
-            },
+            }
             JUMP => {
                 helper.write_u8(0x80)?;
                 helper.write_u8(0x04)?;
@@ -41,19 +41,19 @@ pub fn write<W: Write>(writer: &mut W, pattern: &EmbPattern) -> Result<()> {
                 let delta_y = ((-dy) & 0xFF) as u8;
                 helper.write_u8(delta_x)?;
                 helper.write_u8(delta_y)?;
-            },
+            }
             TRIM => {
                 helper.write_bytes(&[0x80, 0x80, 0x07, 0x00])?;
-            },
+            }
             COLOR_CHANGE | STOP => {
                 helper.write_bytes(&[0x80, 0x01, 0x00, 0x00])?;
-            },
+            }
             END => {
                 // END doesn't write anything in EXP
-            },
+            }
             _ => {
                 // Other commands ignored
-            },
+            }
         }
     }
 

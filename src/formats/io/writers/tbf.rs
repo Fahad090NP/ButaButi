@@ -182,7 +182,7 @@ fn write_stitches(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
                 // Write END and break
                 file.write_all(&[dx as i8 as u8, (-dy) as i8 as u8, 0x8F])?;
                 break;
-            },
+            }
             _ => continue, // Skip unknown commands
         };
 

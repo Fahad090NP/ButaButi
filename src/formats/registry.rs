@@ -204,56 +204,56 @@ impl FormatRegistry {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::pes::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "jef" => crate::formats::io::readers::jef::read(file, None),
             "exp" => crate::formats::io::readers::exp::read(file),
             "vp3" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::vp3::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "pec" => crate::formats::io::readers::pec::read(file),
             "xxx" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::xxx::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "u01" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::u01::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "tbf" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::tbf::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "col" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::col::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "edr" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::edr::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "inf" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::inf::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "json" => crate::formats::io::readers::json::read(file),
             "csv" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::csv::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             "gcode" => {
                 let mut pattern = EmbPattern::new();
                 crate::formats::io::readers::gcode::read(file, &mut pattern)?;
                 Ok(pattern)
-            },
+            }
             _ => Err(Error::UnsupportedFormat(format!(
                 "Unsupported format: {}",
                 format
@@ -279,7 +279,7 @@ impl FormatRegistry {
             ),
             "jef" => {
                 crate::formats::io::writers::jef::write(file, pattern, true, 100, "2025-01-01")
-            },
+            }
             "exp" => crate::formats::io::writers::exp::write(file, pattern),
             "vp3" => crate::formats::io::writers::vp3::write(file, pattern),
             "pec" => crate::formats::io::writers::pec::write(file, pattern),
@@ -302,14 +302,14 @@ impl FormatRegistry {
                 crate::formats::io::writers::svg::write(pattern, &mut buf)?;
                 file.write_all(&buf)?;
                 Ok(())
-            },
+            }
             "txt" => {
                 // TXT doesn't require Seek either
                 let mut buf = Vec::new();
                 crate::formats::io::writers::txt::write(pattern, &mut buf)?;
                 file.write_all(&buf)?;
                 Ok(())
-            },
+            }
             _ => Err(Error::UnsupportedFormat(format!(
                 "Unsupported format: {}",
                 format

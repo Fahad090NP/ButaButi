@@ -158,10 +158,10 @@ fn write_stitches(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
                 file.write_u8(0x08)?;
                 file.write_u8(dx as i8 as u8)?;
                 file.write_u8((-dy) as i8 as u8)?;
-            },
+            }
             END => {
                 break;
-            },
+            }
             STITCH => {
                 // Check if it fits in short encoding
                 if (-124..124).contains(&dx) && (-124..124).contains(&dy) {
@@ -173,22 +173,22 @@ fn write_stitches(pattern: &EmbPattern, file: &mut impl Write) -> Result<()> {
                     file.write_u16::<LittleEndian>(dx as i16 as u16)?;
                     file.write_u16::<LittleEndian>((-dy) as i16 as u16)?;
                 }
-            },
+            }
             TRIM => {
                 file.write_u8(0x7F)?;
                 file.write_u8(0x03)?;
                 file.write_u8(dx as i8 as u8)?;
                 file.write_u8((-dy) as i8 as u8)?;
-            },
+            }
             JUMP => {
                 file.write_u8(0x7F)?;
                 file.write_u8(0x01)?;
                 file.write_u8(dx as i8 as u8)?;
                 file.write_u8((-dy) as i8 as u8)?;
-            },
+            }
             _ => {
                 // Unknown command, skip
-            },
+            }
         }
     }
 

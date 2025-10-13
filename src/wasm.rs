@@ -59,58 +59,58 @@ fn read_pattern(data: &[u8], format: &str) -> Result<EmbPattern> {
         // Formats that return EmbPattern (legacy API)
         "dst" => {
             pattern = readers::dst::read(&mut cursor, None)?;
-        },
+        }
         "jef" => {
             pattern = readers::jef::read(&mut cursor, None)?;
-        },
+        }
         "exp" => {
             pattern = readers::exp::read(&mut cursor)?;
-        },
+        }
         "pec" => {
             pattern = readers::pec::read(&mut cursor)?;
-        },
+        }
         "json" => {
             pattern = readers::json::read(&mut cursor)?;
-        },
+        }
 
         // Formats that mutate pattern (modern API)
         "pes" => {
             readers::pes::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "vp3" => {
             readers::vp3::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "xxx" => {
             readers::xxx::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "u01" => {
             readers::u01::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "tbf" => {
             readers::tbf::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "csv" => {
             readers::csv::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "col" => {
             readers::col::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "edr" => {
             readers::edr::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "inf" => {
             readers::inf::read(&mut cursor, &mut pattern)?;
-        },
+        }
         "gcode" => {
             readers::gcode::read(&mut cursor, &mut pattern)?;
-        },
+        }
 
         _ => {
             return Err(Error::UnsupportedFormat(format!(
                 "Unsupported read format: {}",
                 format
             )))
-        },
+        }
     }
 
     Ok(pattern)
@@ -133,68 +133,68 @@ fn write_pattern(pattern: &EmbPattern, format: &str) -> Result<Vec<u8>> {
         // Formats with extra parameters - use defaults
         "dst" => {
             writers::dst::write(&mut output, pattern, false, 121)?;
-        },
+        }
         "jef" => {
             writers::jef::write(&mut output, pattern, true, 127, "")?;
-        },
+        }
         "csv" => {
             writers::csv::write(&mut output, pattern, writers::csv::CsvVersion::Default)?;
-        },
+        }
 
         // Formats that need Cursor for Seek capability
         "pes" => {
             let mut cursor = Cursor::new(&mut output);
             writers::pes::write_pes(pattern, &mut cursor, writers::pes::PesVersion::V6, false)?;
-        },
+        }
         "pec" => {
             let mut cursor = Cursor::new(&mut output);
             writers::pec::write(&mut cursor, pattern)?;
-        },
+        }
         "xxx" => {
             let mut cursor = Cursor::new(&mut output);
             writers::xxx::write(pattern, &mut cursor)?;
-        },
+        }
         "tbf" => {
             let mut cursor = Cursor::new(&mut output);
             writers::tbf::write(pattern, &mut cursor)?;
-        },
+        }
         "inf" => {
             let mut cursor = Cursor::new(&mut output);
             writers::inf::write(pattern, &mut cursor)?;
-        },
+        }
 
         // Standard writers (impl Write)
         "exp" => {
             writers::exp::write(&mut output, pattern)?;
-        },
+        }
         "vp3" => {
             writers::vp3::write(&mut output, pattern)?;
-        },
+        }
         "u01" => {
             writers::u01::write(pattern, &mut output)?;
-        },
+        }
         "svg" => {
             writers::svg::write(pattern, &mut output)?;
-        },
+        }
         "json" => {
             writers::json::write(&mut output, pattern)?;
-        },
+        }
         "txt" => {
             writers::txt::write(pattern, &mut output)?;
-        },
+        }
         "col" => {
             writers::col::write(pattern, &mut output)?;
-        },
+        }
         "edr" => {
             writers::edr::write(pattern, &mut output)?;
-        },
+        }
 
         _ => {
             return Err(Error::UnsupportedFormat(format!(
                 "Unsupported write format: {}",
                 format
             )))
-        },
+        }
     }
 
     Ok(output)
@@ -313,6 +313,7 @@ pub fn get_pattern_info(input_data: &[u8], format: &str) -> std::result::Result<
 /// Export pattern to SVG for visualization
 ///
 /// Converts embroidery pattern to SVG format for display in the browser.
+/// Uses default simple rendering for backward compatibility.
 ///
 /// # Arguments
 ///
@@ -324,13 +325,66 @@ pub fn get_pattern_info(input_data: &[u8], format: &str) -> std::result::Result<
 /// SVG string that can be embedded in HTML
 #[wasm_bindgen]
 pub fn export_to_svg(input_data: &[u8], format: &str) -> std::result::Result<String, JsValue> {
+    export_to_svg_with_quality(input_data, format, "low")
+}
+
+/// Export pattern to SVG with configurable quality
+///
+/// Converts embroidery pattern to SVG format with realistic stitch rendering.
+///
+/// # Arguments
+///
+/// * `input_data` - Raw bytes of the input file
+/// * `format` - Format of input file (e.g., "dst", "pes", "jef")
+/// * `quality` - Render quality: "low", "medium", "high", or "ultra"
+///
+/// # Quality Levels
+///
+/// - **low**: Simple paths with solid stroke (fastest, smallest file)
+/// - **medium**: Colored paths with rounded caps (smoother appearance)
+/// - **high**: Realistic stitch icons with gradients (best quality)
+/// - **ultra**: 3D-effect stitches with shadows (future implementation)
+///
+/// # Returns
+///
+/// SVG string that can be embedded in HTML
+///
+/// # Example
+///
+/// ```javascript
+/// // Export with realistic rendering
+/// const svg = export_to_svg_with_quality(dstBytes, 'dst', 'high');
+/// document.getElementById('preview').innerHTML = svg;
+/// ```
+#[wasm_bindgen]
+pub fn export_to_svg_with_quality(
+    input_data: &[u8],
+    format: &str,
+    quality: &str,
+) -> std::result::Result<String, JsValue> {
+    use crate::utils::stitch_renderer::StitchRenderQuality;
+
     // Read pattern using unified reader
     let pattern = read_pattern(input_data, format)
         .map_err(|e| JsValue::from_str(&format!("Failed to read {}: {}", format, e)))?;
 
-    // Convert to SVG
+    // Parse quality level
+    let render_quality = match quality.to_lowercase().as_str() {
+        "low" => StitchRenderQuality::Low,
+        "medium" => StitchRenderQuality::Medium,
+        "high" => StitchRenderQuality::High,
+        "ultra" => StitchRenderQuality::Ultra,
+        _ => {
+            return Err(JsValue::from_str(&format!(
+                "Invalid quality: {}. Use 'low', 'medium', 'high', or 'ultra'",
+                quality
+            )))
+        }
+    };
+
+    // Convert to SVG with quality setting
     let mut svg_data = Vec::new();
-    writers::svg::write(&pattern, &mut svg_data)
+    writers::svg::write_with_quality(&pattern, &mut svg_data, render_quality)
         .map_err(|e| JsValue::from_str(&format!("Failed to write SVG: {}", e)))?;
 
     String::from_utf8(svg_data)

@@ -467,7 +467,7 @@ pub fn parse_color_hex(hex_string: &str) -> Result<u32> {
             );
             u32::from_str_radix(&expanded, 16)
                 .map_err(|_| Error::InvalidColor(format!("Invalid hex color: {}", hex_string)))
-        },
+        }
         _ => Err(Error::InvalidColor(format!(
             "Invalid hex color length: {}",
             hex_string

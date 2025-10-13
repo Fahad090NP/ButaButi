@@ -264,23 +264,23 @@ impl FormatDetector {
             Format::DST => {
                 *pattern = crate::formats::io::readers::dst::read(reader, None)?;
                 Ok(())
-            },
+            }
             Format::EXP => {
                 *pattern = crate::formats::io::readers::exp::read(reader)?;
                 Ok(())
-            },
+            }
             Format::JSON => {
                 *pattern = crate::formats::io::readers::json::read(reader)?;
                 Ok(())
-            },
+            }
             Format::JEF => {
                 *pattern = crate::formats::io::readers::jef::read(reader, None)?;
                 Ok(())
-            },
+            }
             Format::PEC => {
                 *pattern = crate::formats::io::readers::pec::read(reader)?;
                 Ok(())
-            },
+            }
             // Formats with new API that mutate pattern and return Result<()>
             Format::PES => crate::formats::io::readers::pes::read(reader, pattern),
             Format::VP3 => crate::formats::io::readers::vp3::read(reader, pattern),

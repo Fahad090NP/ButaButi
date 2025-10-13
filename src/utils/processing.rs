@@ -186,7 +186,7 @@ pub fn calculate_stats(pattern: &EmbPattern) -> PatternStats {
             JUMP => jump_count += 1,
             TRIM => trim_count += 1,
             COLOR_CHANGE => color_change_count += 1,
-            _ => {},
+            _ => {}
         }
 
         // Calculate length from previous stitch (only for STITCH or JUMP)

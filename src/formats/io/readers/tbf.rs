@@ -131,7 +131,7 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
             // Regular stitch
             0x80 => {
                 pattern.add_stitch_relative(read_signed_i8(x), -read_signed_i8(y), STITCH);
-            },
+            }
             // Needle change
             0x81 => {
                 let needle_value = thread_order[needle];
@@ -145,7 +145,7 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
                     let cmd = encode_thread_change(NEEDLE_SET, None, Some(needle_value), None);
                     pattern.add_stitch_relative(read_signed_i8(x), -read_signed_i8(y), cmd);
                 }
-            },
+            }
             // Move/Jump
             0x90 => {
                 if x == 0 && y == 0 {
@@ -153,23 +153,23 @@ pub fn read(file: &mut (impl Read + Seek), pattern: &mut EmbPattern) -> Result<(
                 } else {
                     pattern.add_stitch_relative(read_signed_i8(x), -read_signed_i8(y), JUMP);
                 }
-            },
+            }
             // Stop
             0x40 => {
                 pattern.add_stitch_relative(read_signed_i8(x), -read_signed_i8(y), STOP);
-            },
+            }
             // Trim
             0x86 => {
                 pattern.add_stitch_relative(read_signed_i8(x), -read_signed_i8(y), TRIM);
-            },
+            }
             // End
             0x8F => {
                 break;
-            },
+            }
             _ => {
                 // Unknown control byte, stop reading
                 break;
-            },
+            }
         }
     }
 

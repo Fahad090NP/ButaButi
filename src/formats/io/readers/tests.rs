@@ -168,8 +168,8 @@ mod tests {
             // VP3 may succeed with minimal data or fail - either is acceptable
             // The key is it shouldn't panic
             match result {
-                Ok(_) => {},  // Handled gracefully
-                Err(_) => {}, // Or returned error
+                Ok(_) => {}  // Handled gracefully
+                Err(_) => {} // Or returned error
             }
         }
     }

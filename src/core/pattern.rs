@@ -932,7 +932,7 @@ impl EmbPattern {
                     "Unknown format for stitch splitting: {}",
                     format
                 )))
-            },
+            }
         };
 
         self.split_long_stitches(max_length)
@@ -3913,7 +3913,7 @@ mod tests {
             StitchCommand::Stitch(s) => {
                 assert_eq!(s.x, 10.0);
                 assert_eq!(s.y, 0.0);
-            },
+            }
             _ => panic!("Expected Stitch"),
         }
 
@@ -3921,12 +3921,12 @@ mod tests {
             StitchCommand::Stitch(s) => {
                 assert_eq!(s.x, 10.0);
                 assert_eq!(s.y, 10.0);
-            },
+            }
             _ => panic!("Expected Stitch"),
         }
 
         match commands[2] {
-            StitchCommand::End(_) => {},
+            StitchCommand::End(_) => {}
             _ => panic!("Expected End"),
         }
     }
@@ -3944,7 +3944,7 @@ mod tests {
         assert_eq!(commands.len(), 4);
 
         match commands[0] {
-            StitchCommand::Stitch(_) => {},
+            StitchCommand::Stitch(_) => {}
             _ => panic!("Expected Stitch"),
         }
 
@@ -3952,17 +3952,17 @@ mod tests {
             StitchCommand::Jump(s) => {
                 assert_eq!(s.x, 30.0); // Accumulated position
                 assert_eq!(s.y, 0.0);
-            },
+            }
             _ => panic!("Expected Jump"),
         }
 
         match commands[2] {
-            StitchCommand::Stitch(_) => {},
+            StitchCommand::Stitch(_) => {}
             _ => panic!("Expected Stitch"),
         }
 
         match commands[3] {
-            StitchCommand::End(_) => {},
+            StitchCommand::End(_) => {}
             _ => panic!("Expected End"),
         }
     }
@@ -3985,7 +3985,7 @@ mod tests {
         assert_eq!(commands.len(), 4);
 
         match commands[0] {
-            StitchCommand::Stitch(_) => {},
+            StitchCommand::Stitch(_) => {}
             _ => panic!("Expected Stitch"),
         }
 
@@ -3993,17 +3993,17 @@ mod tests {
             StitchCommand::ColorChange(thread, _) => {
                 assert!(thread.is_some());
                 assert_eq!(thread.unwrap().color, blue.color);
-            },
+            }
             _ => panic!("Expected ColorChange"),
         }
 
         match commands[2] {
-            StitchCommand::Stitch(_) => {},
+            StitchCommand::Stitch(_) => {}
             _ => panic!("Expected Stitch"),
         }
 
         match commands[3] {
-            StitchCommand::End(_) => {},
+            StitchCommand::End(_) => {}
             _ => panic!("Expected End"),
         }
     }
@@ -4021,22 +4021,22 @@ mod tests {
         assert_eq!(commands.len(), 4);
 
         match commands[0] {
-            StitchCommand::Stitch(_) => {},
+            StitchCommand::Stitch(_) => {}
             _ => panic!("Expected Stitch"),
         }
 
         match commands[1] {
-            StitchCommand::Trim(_) => {},
+            StitchCommand::Trim(_) => {}
             _ => panic!("Expected Trim"),
         }
 
         match commands[2] {
-            StitchCommand::Stitch(_) => {},
+            StitchCommand::Stitch(_) => {}
             _ => panic!("Expected Stitch"),
         }
 
         match commands[3] {
-            StitchCommand::End(_) => {},
+            StitchCommand::End(_) => {}
             _ => panic!("Expected End"),
         }
     }
@@ -4054,22 +4054,22 @@ mod tests {
         assert_eq!(commands.len(), 4);
 
         match commands[0] {
-            StitchCommand::Stitch(_) => {},
+            StitchCommand::Stitch(_) => {}
             _ => panic!("Expected Stitch"),
         }
 
         match commands[1] {
-            StitchCommand::Cut(_) => {},
+            StitchCommand::Cut(_) => {}
             _ => panic!("Expected Cut"),
         }
 
         match commands[2] {
-            StitchCommand::Stitch(_) => {},
+            StitchCommand::Stitch(_) => {}
             _ => panic!("Expected Stitch"),
         }
 
         match commands[3] {
-            StitchCommand::End(_) => {},
+            StitchCommand::End(_) => {}
             _ => panic!("Expected End"),
         }
     }
@@ -4087,7 +4087,7 @@ mod tests {
         assert_eq!(commands.len(), 4);
 
         match commands[1] {
-            StitchCommand::Stop(_) => {},
+            StitchCommand::Stop(_) => {}
             _ => panic!("Expected Stop"),
         }
     }

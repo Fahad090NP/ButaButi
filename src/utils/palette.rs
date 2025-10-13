@@ -144,7 +144,7 @@ impl ThreadPalette {
                 let mut cursor = std::io::Cursor::new(&mut buffer);
                 writers::inf::write(&pattern, &mut cursor)?;
                 writer.write_all(&buffer)?;
-            },
+            }
             PaletteFormat::Rgb => Self::write_rgb(&pattern, writer)?,
         }
 

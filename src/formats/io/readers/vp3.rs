@@ -98,7 +98,7 @@ fn read_vp3_sections<R: Read>(helper: &mut ReadHelper<R>, pattern: &mut EmbPatte
                 _ => {
                     // Unknown section, skip it
                     skip_section(helper)?;
-                },
+                }
             }
         }
     }

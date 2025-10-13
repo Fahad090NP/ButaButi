@@ -73,60 +73,60 @@ fn read_stitches(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
             0x00 => {
                 // Stitch
                 pattern.add_stitch_relative(dx, dy, STITCH);
-            },
+            }
             0x01 => {
                 // Jump
                 pattern.add_stitch_relative(dx, dy, JUMP);
-            },
+            }
             0x02 => {
                 // Fast
                 pattern.add_stitch_relative(0.0, 0.0, FAST);
                 if dx != 0.0 || dy != 0.0 {
                     pattern.add_stitch_relative(dx, dy, STITCH);
                 }
-            },
+            }
             0x03 => {
                 // Fast, Jump
                 pattern.add_stitch_relative(0.0, 0.0, FAST);
                 if dx != 0.0 || dy != 0.0 {
                     pattern.add_stitch_relative(dx, dy, JUMP);
                 }
-            },
+            }
             0x04 => {
                 // Slow
                 pattern.add_stitch_relative(0.0, 0.0, SLOW);
                 if dx != 0.0 || dy != 0.0 {
                     pattern.add_stitch_relative(dx, dy, STITCH);
                 }
-            },
+            }
             0x05 => {
                 // Slow, Jump
                 pattern.add_stitch_relative(0.0, 0.0, SLOW);
                 if dx != 0.0 || dy != 0.0 {
                     pattern.add_stitch_relative(dx, dy, JUMP);
                 }
-            },
+            }
             0x06 => {
                 // T1 Top Thread Trimming
                 pattern.add_stitch_relative(0.0, 0.0, TRIM);
                 if dx != 0.0 || dy != 0.0 {
                     pattern.add_stitch_relative(dx, dy, JUMP);
                 }
-            },
+            }
             0x07 => {
                 // T2 Bobbin Threading
                 pattern.add_stitch_relative(0.0, 0.0, TRIM);
                 if dx != 0.0 || dy != 0.0 {
                     pattern.add_stitch_relative(dx, dy, JUMP);
                 }
-            },
+            }
             0x08 => {
                 // C00 Stop
                 pattern.add_stitch_relative(0.0, 0.0, STOP);
                 if dx != 0.0 || dy != 0.0 {
                     pattern.add_stitch_relative(dx, dy, JUMP);
                 }
-            },
+            }
             0x09..=0x17 => {
                 // C01 - C15 (Needle changes)
                 let needle = command - 0x08;
@@ -143,19 +143,19 @@ fn read_stitches(file: &mut impl Read, pattern: &mut EmbPattern) -> Result<()> {
                 if dx != 0.0 || dy != 0.0 {
                     pattern.add_stitch_relative(dx, dy, JUMP);
                 }
-            },
+            }
             0x18 => {
                 // End command
                 break;
-            },
+            }
             _ if ctrl == 0x2B => {
                 // Rare postfix data from machine
                 break;
-            },
+            }
             _ => {
                 // Unknown command, stop reading
                 break;
-            },
+            }
         }
     }
 

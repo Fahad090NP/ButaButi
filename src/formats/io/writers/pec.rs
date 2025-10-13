@@ -187,7 +187,7 @@ fn pec_encode<W: Write>(helper: &mut WriteHelper<W>, pattern: &EmbPattern) -> Re
                     jumping = false;
                 }
                 write_stitch(helper, dx, dy)?;
-            },
+            }
             JUMP => {
                 jumping = true;
                 if init {
@@ -195,7 +195,7 @@ fn pec_encode<W: Write>(helper: &mut WriteHelper<W>, pattern: &EmbPattern) -> Re
                 } else {
                     write_trimjump(helper, dx, dy)?;
                 }
-            },
+            }
             COLOR_CHANGE => {
                 if jumping {
                     write_stitch(helper, 0, 0)?;
@@ -208,12 +208,12 @@ fn pec_encode<W: Write>(helper: &mut WriteHelper<W>, pattern: &EmbPattern) -> Re
                     helper.write_u8(0x01)?;
                 }
                 color_two = !color_two;
-            },
+            }
             END => {
                 helper.write_u8(0xFF)?;
                 break;
-            },
-            _ => {}, // STOP, TRIM ignored
+            }
+            _ => {} // STOP, TRIM ignored
         }
         init = false;
     }

@@ -332,7 +332,7 @@ impl fmt::Display for ErrorKind {
             ErrorKind::InvalidPattern(msg) => write!(f, "Invalid pattern: {}", msg),
             ErrorKind::ThreadIndexOutOfBounds(idx) => {
                 write!(f, "Thread index out of bounds: {}", idx)
-            },
+            }
             ErrorKind::InvalidColor(msg) => write!(f, "Invalid color: {}", msg),
             ErrorKind::Encoding(msg) => write!(f, "Encoding error: {}", msg),
             ErrorKind::Unsupported(msg) => write!(f, "Unsupported operation: {}", msg),

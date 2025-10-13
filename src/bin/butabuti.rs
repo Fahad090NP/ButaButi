@@ -30,7 +30,7 @@ fn main() {
                 process::exit(1);
             }
             convert_file(&args[2], &args[3])
-        },
+        }
         "info" => {
             if args.len() < 3 {
                 eprintln!("Error: info requires <file> argument");
@@ -38,7 +38,7 @@ fn main() {
                 process::exit(1);
             }
             show_info(&args[2])
-        },
+        }
         "validate" => {
             if args.len() < 3 {
                 eprintln!("Error: validate requires <file> argument");
@@ -46,7 +46,7 @@ fn main() {
                 process::exit(1);
             }
             validate_file(&args[2])
-        },
+        }
         "batch" => {
             if args.len() < 5 {
                 eprintln!("Error: batch requires <input_dir> <output_dir> <format> arguments");
@@ -54,21 +54,21 @@ fn main() {
                 process::exit(1);
             }
             batch_convert(&args[2], &args[3], &args[4])
-        },
+        }
         "list-formats" => list_formats(),
         "version" => {
             println!("Butabuti v{}", env!("CARGO_PKG_VERSION"));
             Ok(())
-        },
+        }
         "help" | "--help" | "-h" => {
             print_usage();
             Ok(())
-        },
+        }
         _ => {
             eprintln!("Error: Unknown command '{}'", command);
             print_usage();
             process::exit(1);
-        },
+        }
     };
 
     if let Err(e) = result {
@@ -269,11 +269,11 @@ fn validate_file(filename: &str) -> Result<()> {
             }
 
             Ok(())
-        },
+        }
         Err(e) => {
             println!("✗ Validation failed: {}", e);
             Err(e)
-        },
+        }
     }
 }
 
