@@ -1,0 +1,80 @@
+# Clippy Configuration for Butabuti
+#
+# Defines linting rules for the Butabuti embroidery library.
+# Run `cargo clippy -- -D warnings` to enforce these rules.
+
+# Deny warnings in CI
+# (Use `cargo clippy -- -D warnings` in CI to fail on warnings)
+
+# ===== Pedantic Lints (Enabled) =====
+# These catch common issues and enforce best practices
+
+# Enable pedantic by default
+# (Individual pedantic lints are enabled below)
+
+# ===== Allowed Lints =====
+# Exceptions to default rules with justification
+
+# Allow module inception (e.g., pattern::pattern) - common in Rust
+# Reason: We have core::pattern::pattern and similar, this is idiomatic
+allow-module-inception = true
+
+# Allow similar names - we have many similar format names (DST, PES, etc.)
+# Reason: Format names are similar by nature (dst, exp, pec)
+allow-similar-names = true
+
+# Allow too many arguments in some cases
+# Reason: Some format writers legitimately need many parameters
+too-many-arguments-threshold = 8
+
+# Allow longer functions for complex format readers/writers
+# Reason: Format parsing is inherently complex
+too-many-lines-threshold = 150
+
+# ===== Explicit Deny List =====
+# These lints should always fail
+
+# Correctness lints (always deny)
+correctness = "deny"
+
+# Suspicious patterns
+suspicious = "deny"
+
+# Complexity issues
+complexity = "warn"
+
+# Performance issues
+perf = "warn"
+
+# Style issues
+style = "warn"
+
+# ===== Specific Lint Overrides =====
+
+# Allow dbg! in development (but warn in release)
+# Use: #[cfg_attr(not(debug_assertions), deny(clippy::dbg_macro))]
+
+# Allow unwrap in tests
+# Tests can use unwrap/expect for simplicity
+
+# Warn on missing safety docs
+missing-safety-doc = "warn"
+
+# Warn on missing panics docs
+missing-panics-doc = "warn"
+
+# Warn on missing errors docs
+missing-errors-doc = "warn"
+
+# ===== Performance Lints =====
+
+# Warn on inefficient operations
+inefficient-to-string = "warn"
+unnecessary-wraps = "warn"
+or-fun-call = "warn"
+single-char-pattern = "warn"
+
+# ===== Cognitive Complexity =====
+
+# Warn on overly complex functions
+cognitive-complexity-threshold = 30

@@ -1,0 +1,207 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "needs-discussion"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Please provide as much detail as possible to help us understand and prioritize your request.
+
+  - type: checkboxes
+    id: pre-check
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify the following before submitting
+      options:
+        - label: I have searched existing issues and discussions to ensure this feature hasn't been requested
+          required: true
+        - label: I have read the [ROADMAP.md](https://github.com/Fahad090NP/butabuti/blob/main/ROADMAP.md) to see if this is already planned
+          required: true
+        - label: This feature aligns with Butabuti's core mission (embroidery file manipulation)
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What type of feature is this?
+      options:
+        - New Format Support (reader/writer)
+        - Pattern Operations (manipulation, transformation)
+        - Rendering/Export (SVG, PNG, etc.)
+        - Performance Improvement
+        - API Enhancement
+        - CLI Tool Feature
+        - WASM/Browser Feature
+        - Documentation
+        - Developer Experience
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A clear and concise description of the feature
+      placeholder: "Add support for reading and writing EMB (Wilcom) format files"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: |
+        Users working with Wilcom embroidery software cannot convert their files to other formats.
+        EMB is a widely-used commercial format with no open-source support.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you envision this feature working
+      placeholder: |
+        Implement EMB reader in `src/formats/io/readers/emb.rs`:
+        - Parse EMB header structure
+        - Decode stitch data
+        - Extract thread colors from palette
+
+        Implement EMB writer with similar structure to PES writer.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or features?
+      placeholder: |
+        - Use third-party conversion tool (not ideal for programmatic use)
+        - Read/write via intermediate format (loses metadata)
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe a real-world scenario where this feature would be useful
+      placeholder: |
+        Our embroidery business uses Wilcom software for digitizing, but our machines only accept DST.
+        We need an automated conversion pipeline that preserves color information.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Critical (blocking my use of Butabuti)
+        - High (significantly improves my workflow)
+        - Medium (nice to have)
+        - Low (minor convenience)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: users
+    attributes:
+      label: User Impact
+      description: Who would benefit from this feature?
+      options:
+        - All users (core functionality)
+        - Many users (common use case)
+        - Some users (specific workflow)
+        - Few users (niche scenario)
+        - Just me (personal need)
+    validations:
+      required: true
+
+  - type: textarea
+    id: api-example
+    attributes:
+      label: API Example (if applicable)
+      description: Show how you'd like to use this feature in code
+      render: rust
+      placeholder: |
+        use butabuti::prelude::*;
+
+        // Example API for feature
+        let mut pattern = EmbPattern::new();
+        pattern.auto_generate_underlay();  // New feature
+        pattern.optimize_stitch_order();    // New feature
+    validations:
+      required: false
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Notes
+      description: Technical details if you've researched the implementation
+      placeholder: |
+        - EMB format specification available at: [link]
+        - Similar to PES format in structure
+        - Uses custom compression algorithm (documented here: [link])
+        - Requires support for these stitch types: [list]
+    validations:
+      required: false
+
+  - type: textarea
+    id: breaking
+    attributes:
+      label: Breaking Changes
+      description: Would this require breaking API changes?
+      placeholder: |
+        No breaking changes required. Can be added as new module.
+        OR
+        Yes, would require changing EmbPattern API to support new stitch types.
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Would this feature require new dependencies?
+      placeholder: |
+        - `image` crate for PNG rendering (already optional)
+        - New dependency: `zstd` for compression
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Can you help implement this feature?
+      options:
+        - label: I am willing to submit a pull request for this feature
+          required: false
+        - label: I can provide test files or format specifications
+          required: false
+        - label: I can help with testing and validation
+          required: false
+        - label: I can sponsor development of this feature
+          required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or links
+      placeholder: |
+        - Related to issue #123
+        - Format specification: [link]
+        - Example files: [link]
+        - Reference implementation: [link]
+    validations:
+      required: false

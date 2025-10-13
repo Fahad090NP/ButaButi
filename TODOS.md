@@ -547,3 +547,269 @@
   - Define gradients and symbols once in `<defs>`
   - Reference via `<use>` throughout document
   - Benefit: 50-90% smaller file size vs. inline gradients
+
+## Documentation & Maintenance
+
+### Wiki Documentation
+
+- [ ] **Create Examples Gallery page**
+  - Showcase real-world patterns with before/after conversions
+  - Include code samples for common use cases
+  - Add images of realistic SVG rendering quality levels
+  
+- [ ] **Document all 15 format specifications**
+  - Create individual pages for each format (DST, PES, JEF, VP3, etc.)
+  - Include: File structure, coordinate system, limitations, best practices
+  - Link to official format specs where available
+  
+- [ ] **Create Performance Guide**
+  - Batch processing best practices
+  - Memory optimization for large patterns
+  - Parallel processing guidelines
+  - Benchmarks and expected performance
+  
+- [ ] **Add Troubleshooting Guide**
+  - Common errors and solutions
+  - Format-specific issues (Y-axis flips, color limits, etc.)
+  - File corruption recovery strategies
+  - Platform-specific notes (Windows, Linux, macOS)
+  
+- [ ] **Create Migration Guide**
+  - Upgrading from legacy readers (DST, JEF, EXP, PEC, JSON)
+  - API changes and deprecation notices
+  - Backward compatibility strategy
+  
+- [ ] **Document Color Groups Advanced Usage**
+  - Hierarchical organization patterns
+  - Production workflow examples
+  - Auto-grouping algorithms and thresholds
+  - Custom metadata use cases
+
+### API Documentation
+
+- [ ] **Add comprehensive doc examples for all public APIs**
+  - Every public function needs `/// # Example` section
+  - Examples should compile and be testable with `cargo test --doc`
+  - Cover both success and error cases
+  
+- [ ] **Create module-level documentation**
+  - Add `//!` module docs to all modules
+  - Explain purpose, key types, and usage patterns
+  - Link to related modules and examples
+  
+- [ ] **Document all format reader/writer edge cases**
+  - What happens with empty patterns
+  - Maximum stitch count limits
+  - Color count limitations per format
+  - Coordinate range restrictions
+  
+- [ ] **Add cargo-readme integration**
+  - Auto-sync README.md badges and examples
+  - Keep README.md and lib.rs docs in sync
+  - CI check to verify docs are current
+
+### Code Quality & Standards
+
+- [x] **Add rustfmt.toml configuration**
+  - Enforce consistent formatting rules
+  - Max line width, import grouping, etc.
+  - Document style decisions
+  
+- [x] **Create clippy.toml for custom lints**
+  - Enable additional pedantic lints
+  - Document exceptions and why they exist
+  - Add project-specific lint rules
+  
+- [ ] **Add pre-commit hooks**
+  - Run `cargo fmt` automatically
+  - Run `cargo clippy` before commit
+  - Run quick test subset
+  - Check for TODO comments in production code
+  
+- [ ] **Set up code coverage tracking**
+  - Integrate with codecov.io or coveralls
+  - Add coverage badges to README
+  - Set minimum coverage threshold (e.g., 80%)
+  - Generate HTML coverage reports locally
+  
+- [ ] **Add mutation testing**
+  - Use `cargo-mutants` to verify test quality
+  - Ensure tests catch actual bugs
+  - Measure mutation score
+  
+- [ ] **Create architecture decision records (ADR)**
+  - Document why mutation pattern was chosen for readers
+  - Explain coordinate system choice (0.1mm units)
+  - Record format selection criteria (bidirectional support only)
+  - Maintain ADR/ folder with numbered decisions
+
+### Testing Improvements
+
+- [ ] **Add integration test suite**
+  - Test full conversion workflows
+  - Test batch processing with real files
+  - Test error recovery scenarios
+  - Currently disabled - decide if needed
+  
+- [ ] **Create golden file tests**
+  - Store expected output files
+  - Compare against actual output byte-by-byte
+  - Detect unintended changes in format writers
+  
+- [ ] **Add snapshot testing for SVG/TXT output**
+  - Use `insta` crate for snapshot tests
+  - Review and approve output changes explicitly
+  - Catch unexpected rendering changes
+  
+- [ ] **Performance regression tests**
+  - Benchmark critical paths (readers, writers, transforms)
+  - Alert on performance regressions
+  - Track performance over time
+  
+- [ ] **Fuzz testing for all readers**
+  - Use `cargo-fuzz` or `afl.rs`
+  - Generate random input files
+  - Find crashes and panics
+  - Improve error handling robustness
+  
+- [ ] **Property-based testing expansion**
+  - Add more proptest cases for pattern operations
+  - Test algebraic properties (e.g., rotate 360° = identity)
+  - Test invariants (e.g., bounds always valid)
+  - Already have some - add more
+
+### CI/CD Enhancements
+
+- [ ] **Add automated releases**
+  - Use `cargo-release` for version bumping
+  - Automated changelog generation from commits
+  - GitHub Actions for release builds
+  - Publish to crates.io automatically
+  
+- [ ] **Add nightly Rust CI job**
+  - Test with latest Rust features
+  - Get early warning of breaking changes
+  - Optional - doesn't block merge
+  
+- [ ] **WASM CI testing**
+  - Build WASM package in CI
+  - Test with `wasm-pack test --node`
+  - Verify bundle size doesn't explode
+  
+- [ ] **Documentation CI**
+  - Build docs with `cargo doc --no-deps`
+  - Check for broken links
+  - Verify all examples compile
+  - Deploy docs to GitHub Pages
+
+### Project Management
+
+- [x] **Create ROADMAP.md**
+  - Short-term goals (next release)
+  - Medium-term goals (next 3 months)
+  - Long-term vision (1 year+)
+  - Feature prioritization
+
+- [x] **Create CHANGELOG.md**
+  - Follow Keep a Changelog format
+  - Document all releases
+  - Track breaking changes
+  - Link to release notes
+
+- [x] **Add GitHub issue templates**
+  - Bug report template (YAML form)
+  - Feature request template (YAML form)
+  - Issue template config with links
+  
+- [x] **Add pull request template**
+  - Checklist for contributors
+  - Link to CONTRIBUTING.md
+  - Request for tests and docs
+  
+- [x] **Create security policy (SECURITY.md)**
+  - How to report vulnerabilities
+  - Supported versions
+  - Security update process
+
+### Tooling & Developer Experience
+
+- [ ] **Add cargo-make tasks**
+  - Define common development tasks
+  - `cargo make validate` for full checks
+  - `cargo make coverage` for coverage reports
+  - Cross-platform task definitions
+  
+- [ ] **Create VS Code workspace settings**
+  - Recommended extensions
+  - Rust analyzer settings
+  - Testing configurations
+  - Debug configurations
+  
+- [x] **Add EditorConfig**
+  - Consistent editor settings across IDEs
+  - Indent style, charset, line endings
+  - Already exists with comprehensive settings
+  
+- [ ] **Add justfile (alternative to Makefile)**
+  - Cross-platform command runner
+  - Document common commands
+  - Simpler than Makefile syntax
+
+### Performance Analysis & Optimization
+
+- [ ] **Profile and optimize hot paths**
+  - Use `cargo flamegraph` to find bottlenecks
+  - Optimize pattern transformations
+  - Optimize format readers/writers
+  - Document performance characteristics
+  
+- [ ] **Add SIMD optimizations**
+  - Use `std::simd` for pattern processing
+  - Vectorize color distance calculations
+  - Speed up coordinate transformations
+  
+- [ ] **Implement lazy loading for large patterns**
+  - Stream patterns instead of loading entirely
+  - Process stitches in chunks
+  - Reduce memory footprint
+  
+- [ ] **Add memory pooling**
+  - Reuse allocations in batch operations
+  - Reduce allocator pressure
+  - Profile memory usage patterns
+  
+- [ ] **Optimize FormatRegistry lookups**
+  - Cache format lookups by extension
+  - Use HashMap for O(1) access
+  - Pre-compile extension matching
+
+### Accessibility & Internationalization
+
+- [ ] **Add localization support (i18n)**
+  - Internationalize error messages
+  - Support multiple languages
+  - Use `fluent` or `gettext` crate
+  
+- [ ] **Create CLI translations**
+  - Translate help messages
+  - Support locale-specific formatting
+  - Date/number formatting
+  
+- [ ] **Add screen reader support for WASM**
+  - ARIA labels in HTML interface
+  - Keyboard navigation
+  - Status announcements
+
+## Notes
+
+- **Priority levels**: Items without explicit priority are considered medium
+- **Breaking changes**: Items marked as breaking should be batched for major version releases
+- **Optional items**: Marked with "(optional)" - nice to have but not required
+- **Completed items**: Mark with `[x]` and update documentation accordingly
+- **Defer decisions**: Items requiring more research marked with "TODO: Research"
+
+---
+
+**Last updated:** October 13, 2025  
+**Total items:** 250+  
+**Completed:** 7 (WASM bindings, batch conversion, multi-format export, format listing, wiki page, programmatic format population, stitch renderer module)

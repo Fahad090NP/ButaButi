@@ -1,0 +1,17 @@
+blank_issues_enabled: true
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/Fahad090NP/butabuti/discussions
+    about: Ask questions, share ideas, and discuss with the community
+
+  - name: Documentation
+    url: https://docs.rs/butabuti
+    about: Read API documentation and guides
+
+  - name: Wiki
+    url: https://github.com/Fahad090NP/butabuti/wiki
+    about: User guides, tutorials, and examples
+
+  - name: Security Vulnerability
+    url: https://github.com/Fahad090NP/butabuti/security/advisories/new
+    about: Report security vulnerabilities privately (DO NOT create public issues for security bugs)
