@@ -1,6 +1,6 @@
-# ButaButi Benchmarks
+# Butabuti Benchmarks
 
-This directory contains comprehensive performance benchmarks for the ButaButi embroidery library.
+This directory contains comprehensive performance benchmarks for the Butabuti embroidery library.
 
 ## Running Benchmarks
 

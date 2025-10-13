@@ -1,7 +1,7 @@
 # Build script for WASM target (Windows PowerShell)
 # Requires wasm-pack: cargo install wasm-pack
 
-Write-Host "Building ButaButi for WebAssembly..." -ForegroundColor Cyan
+Write-Host "Building Butabuti for WebAssembly..." -ForegroundColor Cyan
 
 # Build for web target
 wasm-pack build --target web --features wasm --out-dir wasm/pkg ..

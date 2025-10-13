@@ -1,13 +1,13 @@
-# ButaButi - Embroidery File Format Library
+# Butabuti - Embroidery File Format Library
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
-[![CI](https://github.com/Fahad090NP/ButaButi/workflows/CI/badge.svg)](https://github.com/Fahad090NP/ButaButi/actions)
-[![codecov](https://codecov.io/gh/Fahad090NP/ButaButi/branch/main/graph/badge.svg)](https://codecov.io/gh/Fahad090NP/ButaButi)
+[![CI](https://github.com/Fahad090NP/Butabuti/workflows/CI/badge.svg)](https://github.com/Fahad090NP/Butabuti/actions)
+[![codecov](https://codecov.io/gh/Fahad090NP/Butabuti/branch/main/graph/badge.svg)](https://codecov.io/gh/Fahad090NP/Butabuti)
 
 > **Note:** This project is in active development. Features and APIs may change. Contributions are welcome!
 
-A high-performance Rust library for reading, writing, and manipulating embroidery machine files. ButaButi supports 15 embroidery file formats with full read/write support, plus additional export formats.
+A high-performance Rust library for reading, writing, and manipulating embroidery machine files. Butabuti supports 15 embroidery file formats with full read/write support, plus additional export formats.
 
 ## Features
 
@@ -23,15 +23,15 @@ A high-performance Rust library for reading, writing, and manipulating embroider
 
 ## Documentation
 
-📚 **[Complete Documentation](https://github.com/Fahad090NP/ButaButi/wiki)** - User guides, tutorials, and examples
+📚 **[Complete Documentation](https://github.com/Fahad090NP/Butabuti/wiki)** - User guides, tutorials, and examples
 
-- [Installation Guide](https://github.com/Fahad090NP/ButaButi/wiki/Installation) - Setup and dependencies
-- [Quick Start Guide](https://github.com/Fahad090NP/ButaButi/wiki/Quick-Start) - Get started in minutes
-- [API Reference](https://github.com/Fahad090NP/ButaButi/wiki/API-Reference) - Complete API documentation
-- [Format Support](https://github.com/Fahad090NP/ButaButi/wiki/Format-Support) - All supported formats
-- [Examples](https://github.com/Fahad090NP/ButaButi/wiki/Examples) - Code examples and patterns
-- [Features](https://github.com/Fahad090NP/ButaButi/wiki/Features) - Complete feature list
-- [FAQ](https://github.com/Fahad090NP/ButaButi/wiki/FAQ) - Frequently asked questions
+- [Installation Guide](https://github.com/Fahad090NP/Butabuti/wiki/Installation) - Setup and dependencies
+- [Quick Start Guide](https://github.com/Fahad090NP/Butabuti/wiki/Quick-Start) - Get started in minutes
+- [API Reference](https://github.com/Fahad090NP/Butabuti/wiki/API-Reference) - Complete API documentation
+- [Format Support](https://github.com/Fahad090NP/Butabuti/wiki/Format-Support) - All supported formats
+- [Examples](https://github.com/Fahad090NP/Butabuti/wiki/Examples) - Code examples and patterns
+- [Features](https://github.com/Fahad090NP/Butabuti/wiki/Features) - Complete feature list
+- [FAQ](https://github.com/Fahad090NP/Butabuti/wiki/FAQ) - Frequently asked questions
 
 ## Quick Start
 
@@ -55,7 +55,7 @@ See [docs/CLI.md](docs/CLI.md) for complete CLI documentation.
 
 ### Library Usage
 
-Add ButaButi to your `Cargo.toml`:
+Add Butabuti to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -114,11 +114,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 **Visualization:** SVG (vector graphics), PNG (raster image - requires `graphics` feature), TXT (human-readable)
 
-See [Format Support](https://github.com/Fahad090NP/ButaButi/wiki/Format-Support) for detailed format information.
+See [Format Support](https://github.com/Fahad090NP/Butabuti/wiki/Format-Support) for detailed format information.
 
 ## Examples
 
-See the [Examples wiki page](https://github.com/Fahad090NP/ButaButi/wiki/Examples) for comprehensive examples including:
+See the [Examples wiki page](https://github.com/Fahad090NP/Butabuti/wiki/Examples) for comprehensive examples including:
 
 - Creating patterns (circles, stars, shapes, spirals, waves)
 - Using Color Groups to organize threads
@@ -148,9 +148,9 @@ cargo run --example json_and_processing
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/Fahad090NP/ButaButi/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/Fahad090NP/ButaButi/discussions)
-- **Wiki:** [Documentation](https://github.com/Fahad090NP/ButaButi/wiki)
+- **Issues:** [GitHub Issues](https://github.com/Fahad090NP/Butabuti/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/Fahad090NP/Butabuti/discussions)
+- **Wiki:** [Documentation](https://github.com/Fahad090NP/Butabuti/wiki)
 
 ---
 

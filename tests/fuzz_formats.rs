@@ -1,4 +1,4 @@
-// Fuzz Tests for ButaButi Format Readers
+// Fuzz Tests for Butabuti Format Readers
 //
 // These tests use property-based testing via proptest to generate
 // random input data and test format readers for robustness.

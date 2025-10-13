@@ -1,4 +1,4 @@
-﻿# ButaButi Todo List - Upcoming Features and Improvements
+﻿# Butabuti Todo List - Upcoming Features and Improvements
 
 ## File Format Support
 

@@ -1,4 +1,4 @@
-# ButaButi Copilot Instructions
+# Butabuti Copilot Instructions
 
 ## Quick Reference (Critical Facts)
 
@@ -13,7 +13,7 @@
 
 ## Overview
 
-ButaButi is a high-performance Rust library for reading, writing, and manipulating embroidery files with full read/write support. Core abstractions: `EmbPattern` (stitch sequences), `EmbThread` (colors), command constants (STITCH, JUMP, TRIM, etc.), and format-specific readers/writers.
+Butabuti is a high-performance Rust library for reading, writing, and manipulating embroidery files with full read/write support. Core abstractions: `EmbPattern` (stitch sequences), `EmbThread` (colors), command constants (STITCH, JUMP, TRIM, etc.), and format-specific readers/writers.
 
 **Project Type:** Library crate (no binary)  
 **Target Users:** Embroidery software developers, digitizers, format conversion tools  

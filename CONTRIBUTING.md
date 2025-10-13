@@ -1,6 +1,6 @@
-# Contributing to ButaButi Embroidery Library
+# Contributing to Butabuti Embroidery Library
 
-Thank you for your interest in contributing to ButaButi! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to Butabuti! This document provides guidelines for contributing to the project.
 
 ## Getting Started
 
@@ -8,8 +8,8 @@ Thank you for your interest in contributing to ButaButi! This document provides 
 2. **Clone your fork** locally:
 
    ```bash
-   git clone https://github.com/Fahad090NP/ButaButi.git
-   cd ButaButi
+   git clone https://github.com/Fahad090NP/Butabuti.git
+   cd Butabuti
    ```
 
 3. **Create a branch** for your changes:
@@ -157,6 +157,6 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ---
 
-Thank you for contributing to ButaButi! 🌸
+Thank you for contributing to Butabuti! 🌸
 
 This project is actively maintained by [Fahad Iftikhar](https://github.com/Fahad090NP).

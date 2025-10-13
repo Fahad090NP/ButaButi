@@ -3,7 +3,7 @@
 use butabuti::prelude::*;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("🌸 ButaButi Example - Pattern Creation\n");
+    println!("🌸 Butabuti Example - Pattern Creation\n");
 
     // Create a new pattern
     let mut pattern = EmbPattern::new();
@@ -11,7 +11,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Add metadata
     pattern.set_metadata("name", "Square Design");
-    pattern.set_metadata("author", "ButaButi");
+    pattern.set_metadata("author", "Butabuti");
     println!("Added metadata: {}", pattern.get_metadata("name").unwrap());
 
     // Add a thread

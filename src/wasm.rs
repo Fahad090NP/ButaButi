@@ -1,4 +1,4 @@
-//! WebAssembly bindings for ButaButi
+//! WebAssembly bindings for Butabuti
 //!
 //! This module provides browser-compatible API for embroidery file conversion.
 //! Enables reading, writing, and converting embroidery patterns in the browser
@@ -45,7 +45,7 @@ pub fn init_panic_hook() {
 ///
 /// # API Inconsistency Note
 ///
-/// ButaButi readers currently use two different patterns:
+/// Butabuti readers currently use two different patterns:
 /// - **Legacy API**: Returns `Result<EmbPattern>` (DST, JEF, EXP, PEC, JSON)
 /// - **Modern API**: Mutates `&mut EmbPattern` and returns `Result<()>` (PES, VP3, XXX, U01, TBF, etc.)
 ///
@@ -120,7 +120,7 @@ fn read_pattern(data: &[u8], format: &str) -> Result<EmbPattern> {
 ///
 /// # API Inconsistency Note
 ///
-/// ButaButi writers have varying signatures:
+/// Butabuti writers have varying signatures:
 /// - Some require `Seek` capability (PES, PEC, XXX, TBF, INF) - use Cursor
 /// - Some have extra parameters with defaults (DST, JEF, CSV)
 /// - Most accept `impl Write` (EXP, VP3, U01, SVG, JSON, TXT, COL, EDR)

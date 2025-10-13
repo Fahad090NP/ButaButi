@@ -1,4 +1,4 @@
-# Clippy configuration for ButaButi
+# Clippy configuration for Butabuti
 # https://doc.rust-lang.org/clippy/lint_configuration.html
 
 # Cognitive complexity threshold for functions
@@ -8,7 +8,7 @@ cognitive-complexity-threshold = 30
 # Valid identifiers for documentation
 # Prevents false positives for format names and technical terms
 doc-valid-idents = [
-  "ButaButi",
+  "Butabuti",
   "DST",
   "PES",
   "JEF",

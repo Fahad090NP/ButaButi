@@ -3733,10 +3733,10 @@ mod tests {
         assert!(pattern.software().is_none());
         assert!(pattern.software_version().is_none());
 
-        pattern.set_software("ButaButi");
+        pattern.set_software("Butabuti");
         pattern.set_software_version("0.1.0");
 
-        assert_eq!(pattern.software(), Some("ButaButi"));
+        assert_eq!(pattern.software(), Some("Butabuti"));
         assert_eq!(pattern.software_version(), Some("0.1.0"));
 
         // Test version fallback
@@ -3837,7 +3837,7 @@ mod tests {
         pattern.set_keywords(&["floral", "flowers", "nature"]);
         pattern.set_date("2025-10-11");
         pattern.set_notes("Use tear-away stabilizer");
-        pattern.set_software("ButaButi");
+        pattern.set_software("Butabuti");
         pattern.set_software_version("0.1.0");
         pattern.set_hoop_size("5x7");
         pattern.set_fabric_type("Cotton");
@@ -3855,7 +3855,7 @@ mod tests {
         assert_eq!(pattern.keywords().unwrap().len(), 3);
         assert_eq!(pattern.date(), Some("2025-10-11"));
         assert_eq!(pattern.notes(), Some("Use tear-away stabilizer"));
-        assert_eq!(pattern.software(), Some("ButaButi"));
+        assert_eq!(pattern.software(), Some("Butabuti"));
         assert_eq!(pattern.software_version(), Some("0.1.0"));
         assert_eq!(pattern.hoop_size(), Some("5x7"));
         assert_eq!(pattern.fabric_type(), Some("Cotton"));

@@ -1,4 +1,4 @@
-/// ButaButi CLI - Command-line tool for embroidery file conversion and analysis
+/// Butabuti CLI - Command-line tool for embroidery file conversion and analysis
 ///
 /// Usage:
 ///   butabuti convert <input> <output>  - Convert between formats
@@ -57,7 +57,7 @@ fn main() {
         },
         "list-formats" => list_formats(),
         "version" => {
-            println!("ButaButi v{}", env!("CARGO_PKG_VERSION"));
+            println!("Butabuti v{}", env!("CARGO_PKG_VERSION"));
             Ok(())
         },
         "help" | "--help" | "-h" => {
@@ -79,7 +79,7 @@ fn main() {
 
 fn print_usage() {
     println!(
-        "ButaButi - Embroidery File Converter v{}",
+        "Butabuti - Embroidery File Converter v{}",
         env!("CARGO_PKG_VERSION")
     );
     println!();

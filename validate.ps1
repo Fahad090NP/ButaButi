@@ -1,7 +1,7 @@
-# Validate ButaButi Project
+# Validate Butabuti Project
 # Runs all quality checks: build, test, lint, format, docs
 
-Write-Host "`nButaButi Validation" -ForegroundColor Cyan
+Write-Host "`nButabuti Validation" -ForegroundColor Cyan
 Write-Host "==================`n" -ForegroundColor Cyan
 
 $failed = 0

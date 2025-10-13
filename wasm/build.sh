@@ -4,7 +4,7 @@
 
 set -e
 
-echo "Building ButaButi for WebAssembly..."
+echo "Building Butabuti for WebAssembly..."
 
 # Build for web target
 wasm-pack build --target web --features wasm --out-dir wasm/pkg ..

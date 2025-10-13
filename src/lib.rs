@@ -1,4 +1,4 @@
-//! # ButaButi
+//! # Butabuti
 //!
 //! A high-performance Rust library for reading, writing, and manipulating embroidery files.
 //!
