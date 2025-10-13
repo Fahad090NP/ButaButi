@@ -65,6 +65,65 @@ src/
 3. **Document public APIs** - Use doc comments (`///`) for public items
 4. **Handle errors gracefully** - Return `Result`, don't panic in library code
 5. **Keep functions focused** - Small, single-purpose functions
+6. **Prefer descriptive file names** - Use compound names for clarity (e.g., `stitch_renderer.rs` over `renderer.rs`)
+7. **Always validate before commit** - Run `.\validate.ps1` (or `cargo test --lib && cargo clippy -- -D warnings && cargo fmt`) before pushing
+
+### File Naming Conventions
+
+**Prefer descriptive compound names** when parent folder context is insufficient:
+
+- ✅ **GOOD**: `stitch_renderer.rs`, `color_group.rs`, `batch_converter.rs`
+- ❌ **BAD**: `renderer.rs`, `group.rs`, `converter.rs`
+
+**Single words acceptable when:**
+
+- Parent folder provides full context: `formats/registry.rs`
+- Universally understood: `error.rs`, `constants.rs`, `utils.rs`
+- No ambiguity: `pattern.rs` in `core/`
+
+**Rationale**: Descriptive names improve searchability, reduce false positives in grep/IDE search, and make intent immediately clear.
+
+### File Organization Principles
+
+**Keep files separate when:**
+
+- Over 300 lines
+- Independent functionality
+- Different test requirements
+- Distinct conceptual boundaries
+
+**Consider merging when:**
+
+- Under 200 lines each
+- Tightly coupled functionality
+- Shared test fixtures
+- Can't exist independently
+
+**Current files are well-organized** - avoid unnecessary refactoring unless clear benefit.
+
+### Automation Policy
+
+**NEVER use scripts to automate:**
+
+- Documentation generation (markdown files, wikis, changelogs)
+- Code file creation from templates
+- API documentation extraction
+- Release notes compilation
+
+**Scripts ONLY for:**
+
+- Build processes (cargo, wasm-pack)
+- Testing (cargo test, validate.ps1)
+- Formatting/linting (cargo fmt, cargo clippy)
+- Deployment (wasm/build.ps1)
+
+**Instead of automation, add TODO items:**
+
+```markdown
+- [ ] Update wiki documentation for new feature X
+- [ ] Document format Y in Format-Support.md
+- [ ] Add example for use case Z to Examples.md
+```
 
 ### Import Guidelines
 

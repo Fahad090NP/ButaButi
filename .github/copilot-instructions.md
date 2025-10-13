@@ -10,6 +10,8 @@
 -   **No auto-docs**: Never create markdown files after changes unless explicitly requested
 -   **Error handling**: Always return `Result`, never `panic!()` in library code
 -   **Test isolation**: Use cfg(test) modules, test with files from `testing/` directory
+-   **File naming**: Prefer descriptive compound names (e.g., `stitch_renderer.rs` over `renderer.rs`) when parent folder alone is ambiguous
+-   **No script automation for docs**: Never use scripts to auto-generate anything even documentation; update manually or add TODO items instead
 
 ## Overview
 
@@ -526,6 +528,10 @@ results.print_summary();
     -   Wiki documentation lives in `Butabuti.wiki/` folder
     -   Don't create summary files like `IMPLEMENTATION.md`, `SUMMARY.md`, etc. after changes
     -   README.md, IMPROVEMENTS.md, and TODOS.md are the only markdown files to update routinely
+-   **Don't use scripts for automation of sensitive tasks**: Never automate documentation creation, file generation, or other sensitive operations with scripts
+    -   Add TODO items instead of creating automated documentation generators
+    -   Manual updates ensure quality and accuracy
+    -   Scripts are OK for build/test/format tasks (validate.ps1, build.ps1)
 -   **Don't use `panic!()` in library code**: Always return `Result` with descriptive errors
 -   **Don't use `unwrap()` without good reason**: Prefer `?` operator or proper error handling
 -   **Don't make breaking API changes**: Maintain backward compatibility for public APIs
@@ -535,6 +541,115 @@ results.print_summary();
 -   **Don't forget Y-axis conventions**: Some formats flip Y-coordinates (document this)
 -   **Don't mix coordinate systems**: Stick to 0.1mm units throughout
 -   **Don't create docs without request**: Wait for explicit instruction to create documentation
+-   **Don't use single-word file names when ambiguous**: Prefer descriptive compound names (e.g., `stitch_renderer.rs` over `renderer.rs`)
+    -   Exception: When parent folder name provides sufficient context (e.g., `formats/registry.rs` is clear)
+    -   Rationale: Searchability and clarity - `stitch_renderer` is more specific than `renderer`
+
+## File Organization & Naming Conventions
+
+### Naming Philosophy
+
+**Prefer descriptive compound names over single words** to maximize clarity and searchability:
+
+-   ✅ **GOOD**: `stitch_renderer.rs`, `color_group.rs`, `batch_converter.rs`
+-   ❌ **BAD**: `renderer.rs`, `group.rs`, `converter.rs`
+
+**Rationale:**
+
+-   Parent folder name alone may not provide sufficient context
+-   Compound names improve IDE search and codebase navigation
+-   Clear intent: `stitch_renderer` is unambiguous, `renderer` could be anything
+-   Grep/search friendliness: `stitch_renderer` has fewer false positives
+
+### When Single Words Are Acceptable
+
+Single-word names are OK when:
+
+1. Parent folder provides full context: `formats/registry.rs` (clearly a format registry)
+2. Module is universally understood: `error.rs`, `constants.rs`, `utils.rs`
+3. No ambiguity exists: `pattern.rs` in `core/` (clearly the core pattern type)
+
+### File Consolidation Guidelines
+
+**Merge files when:**
+
+-   < 200 lines each and closely related functionality
+-   Tight coupling (one file can't exist without the other)
+-   Shared test fixtures and dependencies
+
+**Keep files separate when:**
+
+-   > 300 lines (large, distinct modules)
+-   Independent functionality (can evolve separately)
+-   Different test requirements
+-   Distinct conceptual boundaries
+
+### Current File Organization Review
+
+**✅ CORRECT naming (descriptive compounds):**
+
+-   `src/utils/stitch_renderer.rs` - Renders stitches (not just any renderer)
+-   `src/core/color_group.rs` - Color-specific groups (not generic groups)
+-   `src/formats/io/detector.rs` - Format detection (clear purpose)
+
+**✅ ACCEPTABLE single words (sufficient context):**
+
+-   `src/core/pattern.rs` - Core pattern type (folder provides context)
+-   `src/core/thread.rs` - Core thread type (folder provides context)
+-   `src/core/encoder.rs` - Pattern encoder (clear in core/)
+-   `src/core/matrix.rs` - Transformation matrix (mathematical concept)
+-   `src/core/constants.rs` - Command constants (universal concept)
+-   `src/core/collection.rs` - Pattern collection (clear in core/)
+-   `src/utils/error.rs` - Error types (universal concept)
+-   `src/utils/compress.rs` - Compression utilities (specific to HUS format)
+-   `src/utils/batch.rs` - Batch processing (clear functionality)
+-   `src/utils/palette.rs` - Palette utilities (clear functionality)
+-   `src/utils/processing.rs` - Pattern processing (clear in utils/)
+-   `src/utils/string.rs` - String utilities (universal concept)
+-   `src/utils/functions.rs` - Encoding/decoding functions (could be renamed to `encoding.rs` for clarity)
+-   `src/formats/registry.rs` - Format registry (folder provides context)
+
+**⚠️ CONSIDER renaming (for consistency):**
+
+-   `src/utils/functions.rs` → `src/utils/encoding.rs` (more descriptive of actual purpose: encode_thread_change, decode functions)
+-   No other changes needed - current structure is well-organized
+
+### File Merging Analysis
+
+**DO NOT merge these pairs** (distinct responsibilities, sufficient size):
+
+-   `error.rs` + `processing.rs` - Different concerns (error types vs pattern processing)
+-   `batch.rs` + `processing.rs` - Batch operations vs single-pattern utilities
+-   `palette.rs` + `compress.rs` - Palette management vs Huffman compression
+-   `functions.rs` + `constants.rs` - Encoding helpers vs constant definitions
+
+**All current files should remain separate** - each has a clear, distinct purpose and sufficient complexity.
+
+### Automation Policy
+
+**NEVER automate these with scripts:**
+
+-   Documentation generation (markdown files, wikis)
+-   Code file creation from templates
+-   API documentation extraction
+-   Changelog generation
+-   Release note compilation
+
+**Scripts are ONLY for:**
+
+-   Build process (Cargo, wasm-pack)
+-   Test execution (cargo test, validate.ps1)
+-   Code formatting (cargo fmt)
+-   Linting (cargo clippy)
+-   Deployment (wasm/build.ps1 for WASM compilation)
+
+**Instead of scripts, add TODO items:**
+
+```markdown
+-   [ ] Update API documentation for new feature X
+-   [ ] Document format Y in wiki
+-   [ ] Add example for use case Z
+```
 
 ## Resources
 

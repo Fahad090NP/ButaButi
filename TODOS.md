@@ -297,6 +297,15 @@
 
 ## Code Automation & Refactoring
 
+### File Naming & Organization
+
+- [ ] **Rename `functions.rs` to `encoding.rs`** (optional, for clarity)
+  - Currently: `src/utils/functions.rs` contains `encode_thread_change()`, `decode_*()` functions
+  - Should: `src/utils/encoding.rs` better describes actual purpose
+  - Benefit: More descriptive, matches content (encoding/decoding utilities)
+  - Impact: Minimal - internal utility module, easy refactor
+  - Note: Current name acceptable, but `encoding.rs` would be clearer
+
 ### Format Registry Integration (DRY Principle)
 
 - [ ] **Refactor wasm.rs readers**: Replace manual match statements with FormatRegistry
