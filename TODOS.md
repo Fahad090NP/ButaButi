@@ -189,7 +189,8 @@
 - [x] Basic WASM bindings for format conversion
 - [x] Pattern info extraction in browser
 - [x] SVG export for visualization
-- [x] Format listing API
+- [x] Format listing API (uses FormatRegistry)
+- [x] Programmatic format population in HTML
 - [ ] Batch conversion API in WASM
 - [ ] Progress callbacks for long operations
 - [ ] Web Worker support for background processing
@@ -293,3 +294,247 @@
 - [ ] Add stitch visualizer with step-through
 - [ ] Add performance profiler
 - [ ] Add memory usage analyzer
+
+## Code Automation & Refactoring
+
+### Format Registry Integration (DRY Principle)
+
+- [ ] **Refactor wasm.rs readers**: Replace manual match statements with FormatRegistry
+  - Currently: Manual `match format.to_lowercase()` with 15+ hardcoded cases in `read_pattern()`
+  - Should: Use `registry.read_pattern()` for unified API
+  - Benefit: Automatically supports new formats without wasm.rs changes
+  - Impact: Eliminates ~50 lines of boilerplate match code
+  
+- [ ] **Refactor wasm.rs writers**: Replace manual match statements with FormatRegistry
+  - Currently: Manual `match format.to_lowercase()` with 14+ hardcoded cases in `write_pattern()`
+  - Should: Use `registry.write_pattern()` for unified API
+  - Benefit: Single source of truth for format capabilities
+  - Impact: Eliminates ~60 lines of boilerplate match code
+  
+- [ ] **Add format parameter metadata to FormatRegistry**
+  - Currently: Special parameters (DST max_jump=121, JEF hoop_size=127) hardcoded in wasm.rs
+  - Should: Store default parameters in FormatInfo struct
+  - Fields to add: `default_params: HashMap<String, serde_json::Value>`
+  - Example: `{"max_jump": 121, "extended": false}` for DST
+  - Benefit: Centralized format configuration, easier to expose in UI
+  
+- [ ] **Create CLI command registry using FormatRegistry**
+  - Currently: CLI (src/bin/butabuti.rs) likely has manual format matching
+  - Should: Query FormatRegistry for format validation and help text
+  - Benefit: Auto-generated format list in `--help` output
+  
+- [ ] **Auto-generate format documentation**
+  - Currently: Wiki format lists may be manually maintained
+  - Should: Generate `Format-Support.md` from FormatRegistry at build time
+  - Implementation: Add `build.rs` script or CLI command
+  - Output: Table with Name | Extensions | Read | Write | Description
+  
+- [ ] **Auto-generate file extension to format mapping**
+  - Currently: May have duplicate extension→format logic
+  - Should: Single `get_format_from_extension(ext: &str)` in FormatRegistry
+  - Already exists but verify all code uses it
+
+### API Consistency (Unify Reader/Writer Patterns)
+
+- [ ] **Migrate legacy readers to mutation pattern**
+  - Legacy API (returns `Result<EmbPattern>`): DST, JEF, EXP, PEC, JSON
+  - Modern API (mutates `&mut EmbPattern`): PES, VP3, XXX, U01, TBF, CSV, COL, EDR, INF, GCODE
+  - Should: Standardize all readers to mutation pattern for consistency
+  - Benefit: Enables pattern buffer reuse in batch operations (less allocation)
+  - Breaking change: Update all reader signatures + tests
+  
+- [ ] **Standardize writer parameter order**
+  - Inconsistency: Some writers take `(file, pattern)`, others `(pattern, file)`
+  - Should: Standardize to `write(pattern: &EmbPattern, file: &mut impl Write)`
+  - Benefit: Consistent API across all formats
+  - Check: DST, JEF, CSV, XXX, TBF writers for parameter order
+  
+- [ ] **Abstract format-specific parameters into structs**
+  - Currently: Some writers take many parameters (DST: extended, max_jump; JEF: extended, hoop_size, name)
+  - Should: Create `DstWriteOptions`, `JefWriteOptions` structs
+  - Benefit: Easier to add new parameters without breaking API
+  - Example:
+
+    ```rust
+    pub struct DstWriteOptions {
+        pub extended: bool,
+        pub max_jump: i32,
+    }
+    impl Default for DstWriteOptions { ... }
+    pub fn write(pattern: &EmbPattern, file: &mut impl Write, options: &DstWriteOptions)
+    ```
+
+### Palette Management Automation
+
+- [ ] **Create thread palette registry**
+  - Currently: Thread palettes (JEF, PEC, SEW, HUS, SHV) are separate modules
+  - Should: Create `PaletteRegistry` similar to `FormatRegistry`
+  - Methods: `get_palette(brand: &str)`, `find_closest_thread(rgb: (u8,u8,u8), brand: &str)`
+  - Benefit: Programmatic palette discovery for UI dropdowns
+  
+- [ ] **Auto-generate palette documentation**
+  - Currently: Thread color tables may be manually documented
+  - Should: Generate markdown tables from palette data
+  - Output: `palettes/README.md` with all thread colors per brand
+  
+- [ ] **Create unified thread matching API**
+  - Currently: Color matching logic may be duplicated
+  - Should: `ThreadMatcher` utility with configurable algorithms
+  - Methods: `find_closest(rgb)`, `find_closest_in_brand(rgb, brand)`, `batch_match(colors)`
+
+### Error Handling Standardization
+
+- [ ] **Create format-specific error types**
+  - Currently: Generic `Error::Parse(String)` for all format errors
+  - Should: `Error::DstParse(DstError)`, `Error::PesParse(PesError)` with enums
+  - Benefit: Better error messages, easier debugging, machine-readable error codes
+  
+- [ ] **Add error recovery hints**
+  - Currently: Errors just report failure
+  - Should: Include recovery suggestions in error messages
+  - Example: `Error::Parse("Invalid header size: expected 512, got 256. File may be truncated or corrupted. Try re-exporting from source software.")`
+
+### Metadata Management
+
+- [ ] **Create metadata schema/registry**
+  - Currently: Metadata keys are free-form strings
+  - Should: Define metadata schema with known keys
+  - Fields: `title`, `author`, `copyright`, `date`, `machine`, `hoop_size`, etc.
+  - Benefit: Type-safe metadata access, auto-completion in IDEs
+  
+- [ ] **Add metadata propagation in format conversions**
+  - Currently: Metadata may be lost during conversions
+  - Should: Automatically copy compatible metadata between formats
+  - Implementation: Metadata mapping table in FormatRegistry
+
+### Testing Automation
+
+- [ ] **Generate round-trip tests from FormatRegistry**
+  - Currently: Manual round-trip tests per format
+  - Should: Macro or build script to generate tests from registry
+  - Pattern: For each format with `can_read && can_write`, test read→write→read→compare
+  
+- [ ] **Create test fixture registry**
+  - Currently: Test files scattered in workspace root
+  - Should: Organized `tests/fixtures/{format}/` structure
+  - Manifest: `fixtures.toml` with test cases and expected results
+  
+- [ ] **Auto-generate format compatibility matrix**
+  - Currently: Unknown which formats preserve which features
+  - Should: Test all format pairs (A→B) and track data loss
+  - Output: Compatibility matrix showing stitch count, color, metadata preservation
+
+## Realistic Stitch Rendering
+
+### SVG Export Enhancements
+
+- [ ] **Integrate stitch.svg icon for realistic stitches**
+  - Currently: SVG writer uses simple stroke paths
+  - Should: Replace paths with repeated stitch.svg symbols
+  - Implementation:
+    1. Embed stitch.svg as SVG `<symbol id="stitch">` definition in header
+    2. For each stitch point, add `<use xlink:href="#stitch" x="..." y="..." />`
+    3. Replace color #808080ff in gradient with thread color dynamically
+    4. Rotate stitch icon to match stitch angle
+  - Benefit: Realistic embroidery preview in SVG exports
+  
+- [ ] **Calculate stitch angles for rotation**
+  - Currently: Stitches rendered as simple lines
+  - Should: Calculate angle between consecutive stitch points
+  - Formula: `angle = atan2(dy, dx)` converted to degrees
+  - Apply via SVG transform: `<use transform="rotate({angle} {x} {y})" .../>`
+  
+- [ ] **Add stitch density visualization**
+  - Currently: All stitches rendered at same size
+  - Should: Scale stitch icon based on local stitch density
+  - Dense areas → smaller stitches, sparse areas → larger stitches
+  - Benefit: Shows fabric texture variation
+  
+- [ ] **Add SVG export quality options**
+  - Low quality: Simple paths (current implementation)
+  - Medium quality: Colored paths with rounded caps
+  - High quality: Realistic stitch icons with gradients
+  - Ultra quality: 3D-effect stitches with shadows
+  
+- [ ] **Optimize SVG symbol reuse**
+  - Currently: N/A (feature not implemented)
+  - Should: Define stitch symbol once, reuse with `<use>`
+  - Benefit: Smaller file size for large patterns (1000s of stitches)
+
+### PNG Export Enhancements
+
+- [ ] **Add realistic stitch rendering to PNG writer**
+  - Currently: PNG writer (if graphics feature enabled) may use simple rendering
+  - Should: Render stitch.svg icon at each stitch point
+  - Implementation: Use `resvg` crate to rasterize SVG stitch icon per point
+  - Alternative: Pre-render stitch icon at multiple angles (0-359°), cache as sprites
+  
+- [ ] **Add configurable DPI for PNG export**
+  - Currently: Fixed resolution
+  - Should: Accept DPI parameter (72, 150, 300, 600)
+  - Benefit: Print-quality exports at 300+ DPI
+  
+- [ ] **Add anti-aliasing options**
+  - Should: Quality presets (draft, normal, high, ultra)
+  - Ultra mode: 4x supersampling for smooth edges
+
+### Future Image/Video Formats
+
+- [ ] **JPEG export with realistic stitches**
+  - Strategy: Render to PNG with realistic stitches, then convert to JPEG
+  - Add quality slider (1-100)
+  
+- [ ] **GIF export with realistic stitches**
+  - Static GIF: Same as PNG but with palette quantization
+  - Animated GIF: Show stitch sequence frame-by-frame
+  - Frame rate option (1-30 fps)
+  
+- [ ] **MP4 video export of stitching process**
+  - Render each stitch progressively
+  - Add thread color changes as video segments
+  - Show needle movement animation
+  - Export options: Resolution (720p, 1080p, 4K), FPS (24, 30, 60)
+  - Codec: H.264 for compatibility
+  
+- [ ] **WebP export with realistic stitches**
+  - Supports both lossy and lossless compression
+  - Better than PNG for web use (smaller files)
+  
+- [ ] **3D render export with texture mapping**
+  - Render stitches with height/depth for 3D effect
+  - Add fabric texture background
+  - Export as PNG with normal maps or 3D formats (OBJ, glTF)
+
+### Stitch Icon Customization
+
+- [ ] **Create stitch icon variations**
+  - Currently: Single stitch.svg icon
+  - Should: Multiple stitch types (satin, running, cross, bean, moss)
+  - Each type has unique visual appearance
+  
+- [ ] **Add stitch thickness scaling**
+  - Currently: Fixed icon size
+  - Should: Scale based on thread weight (30wt, 40wt, 60wt)
+  - Heavier threads → thicker stitch icons
+  
+- [ ] **Add fabric texture backgrounds**
+  - Option to overlay stitches on fabric textures
+  - Textures: Cotton, linen, denim, felt, leather
+  - Blend mode: Multiply or overlay for realistic appearance
+
+### Performance Optimization
+
+- [ ] **Cache rendered stitch sprites**
+  - Pre-render stitch icon at all 360 rotation angles
+  - Store as sprite sheet or texture atlas
+  - Benefit: Faster rendering for large patterns
+  
+- [ ] **Add progressive rendering for large patterns**
+  - Render in chunks (1000 stitches at a time)
+  - Show progress indicator
+  - Stream output for web display
+  
+- [ ] **Optimize SVG size with symbol reuse**
+  - Define gradients and symbols once in `<defs>`
+  - Reference via `<use>` throughout document
+  - Benefit: 50-90% smaller file size vs. inline gradients

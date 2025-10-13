@@ -340,27 +340,55 @@ pub fn export_to_svg(input_data: &[u8], format: &str) -> std::result::Result<Str
 /// List all supported formats
 ///
 /// Returns a JSON array of supported input and output formats.
+/// Dynamically queries the FormatRegistry for accurate format information.
 ///
 /// # Returns
 ///
 /// JSON string with format information:
 /// ```json
 /// {
-///   "input_formats": ["dst", "pes", "jef", ...],
-///   "output_formats": ["dst", "pes", "jef", "svg", ...]
+///   "input_formats": [
+///     {"name": "DST", "extensions": ["dst"], "description": "Tajima DST format"},
+///     ...
+///   ],
+///   "output_formats": [...]
 /// }
 /// ```
 #[wasm_bindgen]
 pub fn list_formats() -> String {
+    use crate::formats::registry::FormatRegistry;
+
+    let registry = FormatRegistry::new();
+
+    let input_formats: Vec<serde_json::Value> = registry
+        .readable_formats()
+        .iter()
+        .map(|f| {
+            serde_json::json!({
+                "name": f.name.to_lowercase(),
+                "display_name": f.name,
+                "extensions": f.extensions,
+                "description": f.description
+            })
+        })
+        .collect();
+
+    let output_formats: Vec<serde_json::Value> = registry
+        .writable_formats()
+        .iter()
+        .map(|f| {
+            serde_json::json!({
+                "name": f.name.to_lowercase(),
+                "display_name": f.name,
+                "extensions": f.extensions,
+                "description": f.description
+            })
+        })
+        .collect();
+
     let info = serde_json::json!({
-        "input_formats": [
-            "dst", "pes", "jef", "exp", "vp3", "pec", "xxx", "u01", "tbf",
-            "csv", "col", "edr", "inf", "json", "gcode"
-        ],
-        "output_formats": [
-            "dst", "pes", "jef", "exp", "vp3", "pec", "xxx", "u01", "tbf",
-            "svg", "csv", "col", "edr", "inf", "json", "txt"
-        ]
+        "input_formats": input_formats,
+        "output_formats": output_formats
     });
 
     info.to_string()

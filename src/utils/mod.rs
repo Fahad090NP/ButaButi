@@ -21,5 +21,8 @@ pub mod palette;
 /// Pattern processing utilities
 pub mod processing;
 
+/// Realistic stitch rendering for SVG/PNG/image exports
+pub mod stitch_renderer;
+
 /// UTF-8 string utilities for format handling
 pub mod string;

@@ -12,7 +12,8 @@ A high-performance Rust library for reading, writing, and manipulating embroider
 ## Features
 
 - **15 Embroidery Formats** - Full bidirectional support (read & write)
-- **Export Formats** - SVG, PNG, TXT for visualization
+- **Export Formats** - SVG (with realistic rendering), PNG, TXT for visualization
+- **Realistic Stitch Rendering** - High-quality SVG export with gradient stitches and rotation
 - **Color Group Architecture** - Organize threads into logical groups with auto-grouping by color similarity
 - **CLI Tool** - Command-line converter for batch processing and analysis
 - **WebAssembly** (Experimental) - Browser-based file conversion infrastructure (API refinement in progress)
