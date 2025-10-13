@@ -12,6 +12,9 @@ keywords = ["embroidery", "dst", "pes", "jef", "converter"]
 categories = ["parser-implementations", "encoding", "graphics"]
 readme = "README.md"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

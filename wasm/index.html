@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Butabuti WASM Demo - Embroidery File Converter</title>
+        <title>Butabuti WASM - Embroidery File Converter</title>
         <style>
             * {
                 margin: 0;
@@ -42,6 +42,15 @@
             .header p {
                 font-size: 1.1em;
                 opacity: 0.9;
+            }
+
+            .header .badge {
+                display: inline-block;
+                background: rgba(255, 255, 255, 0.2);
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 0.9em;
+                margin-top: 10px;
             }
 
             .content {
@@ -116,14 +125,15 @@
                 transition: transform 0.2s, box-shadow 0.2s;
                 display: inline-block;
                 margin-right: 10px;
+                margin-bottom: 10px;
             }
 
-            button:hover {
+            button:hover:not(:disabled) {
                 transform: translateY(-2px);
                 box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
             }
 
-            button:active {
+            button:active:not(:disabled) {
                 transform: translateY(0);
             }
 
@@ -244,19 +254,82 @@
                 overflow-x: auto;
                 margin-top: 10px;
             }
+
+            .file-info {
+                background: white;
+                padding: 15px;
+                border-radius: 6px;
+                margin-top: 15px;
+                border: 1px solid #e0e0e0;
+            }
+
+            .file-info strong {
+                color: #667eea;
+            }
+
+            .alert {
+                padding: 15px;
+                border-radius: 6px;
+                margin-bottom: 20px;
+            }
+
+            .alert-info {
+                background: #e3f2fd;
+                border: 1px solid #2196f3;
+                color: #0d47a1;
+            }
+
+            .alert-warning {
+                background: #fff3e0;
+                border: 1px solid #ff9800;
+                color: #e65100;
+            }
+
+            .button-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            @media (max-width: 768px) {
+                .header h1 {
+                    font-size: 1.8em;
+                }
+
+                .content {
+                    padding: 20px;
+                }
+
+                .button-group {
+                    flex-direction: column;
+                }
+
+                button {
+                    width: 100%;
+                    margin-right: 0;
+                }
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <h1>🎨 Butabuti WASM Demo</h1>
+                <h1>🎨 Butabuti WASM</h1>
                 <p>
                     Convert embroidery files directly in your browser - no
                     server required!
                 </p>
+                <div class="badge">✨ Privacy-First • 🚀 Fast • 🔒 Secure</div>
             </div>
 
             <div class="content">
+                <div class="alert alert-info">
+                    <strong>🔒 Your Privacy Matters:</strong> All file
+                    processing happens entirely in your browser. Your files
+                    never leave your computer and are not uploaded to any
+                    server.
+                </div>
+
                 <!-- File Upload Section -->
                 <div class="card">
                     <h2>📁 Upload Embroidery File</h2>
@@ -268,9 +341,12 @@
                         <input
                             type="file"
                             id="fileInput"
-                            accept=".dst,.pes,.jef,.exp,.vp3,.pec,.xxx,.u01,.tbf,.csv,.json"
+                            accept=".dst,.pes,.jef,.exp,.vp3,.pec,.xxx,.u01,.tbf,.csv,.json,.col,.edr,.inf,.gcode"
                         />
                     </div>
+
+                    <div id="fileInfo" class="file-info hidden"></div>
+
                     <div class="form-group">
                         <label for="outputFormat">Convert to format:</label>
                         <select id="outputFormat">
@@ -285,6 +361,9 @@
                                 <option value="xxx">XXX - Singer</option>
                                 <option value="u01">U01 - Barudan</option>
                                 <option value="tbf">TBF - Tajima</option>
+                                <option value="col">COL - Color List</option>
+                                <option value="edr">EDR - Embird</option>
+                                <option value="inf">INF - Thread Info</option>
                             </optgroup>
                             <optgroup label="Export Formats">
                                 <option value="svg" selected>
@@ -298,9 +377,12 @@
                             </optgroup>
                         </select>
                     </div>
-                    <button id="convertBtn" disabled>Convert File</button>
-                    <button id="infoBtn" disabled>Get Pattern Info</button>
-                    <button id="previewBtn" disabled>Preview SVG</button>
+
+                    <div class="button-group">
+                        <button id="convertBtn" disabled>🔄 Convert File</button>
+                        <button id="infoBtn" disabled>📊 Get Pattern Info</button>
+                        <button id="previewBtn" disabled>🖼️ Preview SVG</button>
+                    </div>
                 </div>
 
                 <!-- Output Section -->
@@ -320,13 +402,14 @@
             let wasmReady = false;
             let fileData = null;
             let fileFormat = null;
+            let fileName = "";
 
             // Initialize WASM
             async function initWasm() {
                 try {
                     await init();
                     wasmReady = true;
-                    console.log("WASM module loaded successfully");
+                    console.log("✅ WASM module loaded successfully");
 
                     // Show supported formats
                     const formats = JSON.parse(list_formats());
@@ -344,6 +427,8 @@
                     const file = e.target.files[0];
                     if (!file) return;
 
+                    fileName = file.name;
+
                     // Detect format from extension
                     const ext = file.name.split(".").pop().toLowerCase();
                     fileFormat = ext;
@@ -358,10 +443,19 @@
                         document.getElementById("infoBtn").disabled = false;
                         document.getElementById("previewBtn").disabled = false;
 
-                        showSuccess(
-                            `File loaded: ${file.name} (${
+                        // Show file info
+                        const fileInfo = document.getElementById("fileInfo");
+                        fileInfo.classList.remove("hidden");
+                        fileInfo.innerHTML = `
+                            <strong>📄 File:</strong> ${file.name}<br>
+                            <strong>📏 Size:</strong> ${formatBytes(
                                 fileData.length
-                            } bytes, format: ${ext.toUpperCase()})`
+                            )}<br>
+                            <strong>🏷️ Format:</strong> ${ext.toUpperCase()}
+                        `;
+
+                        showSuccess(
+                            `✅ File loaded successfully! Ready to convert.`
                         );
                     };
                     reader.readAsArrayBuffer(file);
@@ -381,7 +475,7 @@
                     }
 
                     try {
-                        showLoading("Converting...");
+                        showLoading("Converting file...");
 
                         const result = convert_pattern(
                             fileData,
@@ -396,15 +490,29 @@
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = `converted.${outputFormat}`;
+
+                        // Use original filename with new extension
+                        const baseName = fileName.substring(
+                            0,
+                            fileName.lastIndexOf(".")
+                        );
+                        a.download = `${baseName}.${outputFormat}`;
                         a.click();
                         URL.revokeObjectURL(url);
 
                         showSuccess(
-                            `✅ Conversion complete! File downloaded as converted.${outputFormat} (${result.length} bytes)`
+                            `✅ Conversion complete!<br><br>` +
+                                `<strong>Downloaded:</strong> ${a.download}<br>` +
+                                `<strong>Size:</strong> ${formatBytes(
+                                    result.length
+                                )}<br>` +
+                                `<strong>Format:</strong> ${outputFormat.toUpperCase()}`
                         );
                     } catch (err) {
-                        showError("Conversion failed: " + err);
+                        showError(
+                            "Conversion failed: " + err + "<br><br>" +
+                                "Please check that the file format is correct."
+                        );
                     }
                 });
 
@@ -439,27 +547,32 @@
                         // Color list
                         if (info.colors && info.colors.length > 0) {
                             html +=
-                                '<h4 style="margin-top: 25px; margin-bottom: 10px;">Thread Colors</h4>';
+                                '<h4 style="margin-top: 25px; margin-bottom: 10px;">🎨 Thread Colors</h4>';
                             html += '<div class="color-list">';
                             info.colors.forEach((color, idx) => {
                                 const rgb = `rgb(${color.red}, ${color.green}, ${color.blue})`;
                                 html += `<div class="color-chip">`;
                                 html += `<div class="color-swatch" style="background-color: ${rgb}"></div>`;
-                                html += `<span>${idx + 1}. ${
-                                    color.description
-                                }</span>`;
+                                html += `<span><strong>${
+                                    idx + 1
+                                }.</strong> ${color.description}</span>`;
                                 html += `</div>`;
                             });
                             html += "</div>";
                         }
 
-                        // Raw JSON
-                        html += '<h4 style="margin-top: 25px;">Raw Data</h4>';
+                        // Raw JSON (collapsible)
+                        html +=
+                            '<details style="margin-top: 25px;"><summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f4f4f4; border-radius: 6px;">🔍 View Raw Data (JSON)</summary>';
                         html += `<pre>${JSON.stringify(info, null, 2)}</pre>`;
+                        html += "</details>";
 
                         showSuccess(html);
                     } catch (err) {
-                        showError("Failed to get pattern info: " + err);
+                        showError(
+                            "Failed to get pattern info: " + err + "<br><br>" +
+                                "Please check that the file format is correct."
+                        );
                     }
                 });
 
@@ -476,14 +589,31 @@
 
                         let html = "<h3>🖼️ SVG Preview</h3>";
                         html += `<div id="svgPreview">${svg}</div>`;
+                        html +=
+                            '<p style="margin-top: 15px; color: #666;"><em>Tip: Right-click on the preview and select "Save Image As" to save as SVG file.</em></p>';
 
                         showSuccess(html);
                     } catch (err) {
-                        showError("Failed to generate preview: " + err);
+                        showError(
+                            "Failed to generate preview: " + err + "<br><br>" +
+                                "Please check that the file format is correct."
+                        );
                     }
                 });
 
             // Helper functions
+            function formatBytes(bytes) {
+                if (bytes === 0) return "0 Bytes";
+                const k = 1024;
+                const sizes = ["Bytes", "KB", "MB", "GB"];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return (
+                    Math.round((bytes / Math.pow(k, i)) * 100) / 100 +
+                    " " +
+                    sizes[i]
+                );
+            }
+
             function showLoading(message) {
                 const output = document.getElementById("output");
                 output.className = "";
@@ -496,6 +626,7 @@
                 output.className = "success";
                 output.classList.remove("hidden");
                 output.innerHTML = html;
+                output.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
 
             function showError(message) {
@@ -503,6 +634,7 @@
                 output.className = "error";
                 output.classList.remove("hidden");
                 output.innerHTML = `<strong>❌ Error:</strong> ${message}`;
+                output.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
 
             // Initialize on page load

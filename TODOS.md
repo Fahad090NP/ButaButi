@@ -176,11 +176,91 @@
 
 - [ ] Add Python bindings (PyO3)
 - [ ] Add Node.js bindings (Neon)
-- [ ] Add WebAssembly bindings
+- [x] Add WebAssembly bindings
 - [ ] Add C FFI bindings
 - [ ] Add REST API server
 - [ ] Add GraphQL API
 - [ ] Add gRPC service
+
+## WebAssembly/Browser Support
+
+### Core Functionality
+
+- [x] Basic WASM bindings for format conversion
+- [x] Pattern info extraction in browser
+- [x] SVG export for visualization
+- [x] Format listing API
+- [ ] Batch conversion API in WASM
+- [ ] Progress callbacks for long operations
+- [ ] Web Worker support for background processing
+- [ ] Streaming API for large files
+- [ ] Memory optimization for constrained environments
+
+### User Interface Improvements
+
+- [ ] Add drag-and-drop file upload
+- [ ] Add multi-file selection and batch processing
+- [ ] Add file format auto-detection
+- [ ] Add download progress indicator
+- [ ] Add conversion queue management
+- [ ] Add recent conversions history (localStorage)
+- [ ] Add format presets (common conversions)
+- [ ] Add keyboard shortcuts
+- [ ] Add mobile-responsive design improvements
+- [ ] Add pattern zoom and pan controls
+- [ ] Add print-friendly SVG export option
+
+### Advanced Features
+
+- [ ] Add pattern editing capabilities in browser
+  - [ ] Move/translate stitches
+  - [ ] Rotate pattern
+  - [ ] Scale pattern
+  - [ ] Mirror/flip pattern
+  - [ ] Change thread colors
+  - [ ] Add/remove stitches
+- [ ] Add pattern comparison view (side-by-side)
+- [ ] Add hoop boundary overlay on preview
+- [ ] Add stitch-by-stitch animation
+- [ ] Add thread color picker with brand palettes
+- [ ] Add pattern library/gallery with localStorage
+- [ ] Add export to multiple formats at once (ZIP download)
+- [ ] Add pattern merge/combine functionality
+- [ ] Add pattern templates/blanks
+
+### Performance & Optimization
+
+- [ ] Implement WASM SIMD optimizations
+- [ ] Add lazy loading for large patterns
+- [ ] Optimize WASM binary size (tree-shaking)
+- [ ] Add service worker for offline support
+- [ ] Add WASM module caching
+- [ ] Profile and optimize hot paths
+- [ ] Add memory pooling for large conversions
+- [ ] Implement progressive rendering for SVG preview
+
+### Testing & Quality
+
+- [ ] Add browser-based unit tests
+- [ ] Add E2E tests for web interface
+- [ ] Add cross-browser compatibility tests
+- [ ] Add performance benchmarks in browser
+- [ ] Add memory leak detection
+- [ ] Add accessibility (a11y) improvements
+- [ ] Add ARIA labels for screen readers
+- [ ] Add keyboard navigation support
+
+### Developer Experience
+
+- [ ] Add TypeScript definitions for WASM API
+- [ ] Add NPM package for WASM module
+- [ ] Add CDN hosting for WASM binaries
+- [ ] Add React component wrapper
+- [ ] Add Vue component wrapper
+- [ ] Add Svelte component wrapper
+- [ ] Add usage examples for popular frameworks
+- [ ] Add playground/sandbox environment
+- [ ] Add API documentation generator
 
 ## Data Formats
 

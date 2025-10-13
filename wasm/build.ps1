@@ -4,9 +4,18 @@
 Write-Host "Building Butabuti for WebAssembly..." -ForegroundColor Cyan
 
 # Build for web target
-wasm-pack build --target web --features wasm --out-dir wasm/pkg ..
+# wasm-pack will create the output in pkg/ directory by default
+wasm-pack build --target web --features wasm
 
 if ($LASTEXITCODE -eq 0) {
+    # Move pkg to wasm/pkg if build succeeded
+    if (Test-Path "pkg") {
+        if (Test-Path "wasm/pkg") {
+            Remove-Item -Recurse -Force "wasm/pkg"
+        }
+        Move-Item "pkg" "wasm/pkg"
+    }
+
     Write-Host "`nBuild complete! Output in wasm/pkg/" -ForegroundColor Green
     Write-Host "`nTo test locally:" -ForegroundColor Yellow
     Write-Host "  cd wasm"

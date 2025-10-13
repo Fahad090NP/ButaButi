@@ -15,35 +15,9 @@
 
 Butabuti is a high-performance Rust library for reading, writing, and manipulating embroidery files with full read/write support. Core abstractions: `EmbPattern` (stitch sequences), `EmbThread` (colors), command constants (STITCH, JUMP, TRIM, etc.), and format-specific readers/writers.
 
-**Project Type:** Library crate (no binary)  
+**Project Type:** Library crate + CLI binary (`src/bin/butabuti.rs`)  
 **Target Users:** Embroidery software developers, digitizers, format conversion tools  
 **Key Differentiator:** Full bidirectional format support - only formats with both readers AND writers are included
-
-## Supported Formats
-
-**Embroidery Formats (14 with full read/write):**
-
--   **DST** - Tajima (most common industrial format)
--   **PES** - Brother
--   **EXP** - Melco
--   **JEF** - Janome
--   **VP3** - Pfaff
--   **PEC** - Brother
--   **XXX** - Singer
--   **U01** - Barudan
--   **TBF** - Tajima
--   **COL** - Thread color list
--   **EDR** - Embird color
--   **INF** - Thread information
--   **JSON** - JSON embroidery data
--   **CSV** - CSV embroidery data
--   **GCODE** - GCODE embroidery data
-
-**Export-Only Formats:**
-
--   **SVG** - Scalable vector graphics
--   **PNG** - Raster image (requires `graphics` feature)
--   **TXT** - Human-readable text
 
 ## Architecture
 
@@ -51,23 +25,31 @@ Butabuti is a high-performance Rust library for reading, writing, and manipulati
 
 ```
 src/
-├── core/           # Core abstractions
-│   ├── pattern.rs    # EmbPattern (stitches + metadata)
-│   ├── thread.rs     # EmbThread (colors)
-│   ├── constants.rs  # Command bit flags (STITCH, JUMP, TRIM)
-│   ├── encoder.rs    # Transcoder for complex transforms
-│   └── matrix.rs     # Transformation matrices
-├── formats/io/     # Format I/O (15 bidirectional formats)
-│   ├── readers/      # DST, PES, JEF, VP3, EXP, etc.
-│   ├── writers/      # Paired writers + SVG, PNG, TXT
-│   └── utils.rs      # ReadHelper/WriteHelper for binary I/O
-├── palettes/       # Thread color databases
-│   └── thread_*.rs   # JEF, PEC, SEW, SHV brand palettes
-└── utils/          # Cross-cutting concerns
-    ├── error.rs      # Error/Result types
-    ├── batch.rs      # BatchConverter/MultiFormatExporter
-    ├── processing.rs # Pattern utilities (normalize, fix_color_count)
-    └── compress.rs   # Huffman compression (for HUS format)
+├── bin/                  # CLI binary
+│   └── butabuti.rs       # Command-line tool (convert, info, validate, batch)
+├── core/                 # Core abstractions
+│   ├── pattern.rs        # EmbPattern (stitches + metadata)
+│   ├── thread.rs         # EmbThread (colors)
+│   ├── color_group.rs    # ColorGroup (organize threads by category)
+│   ├── collection.rs     # Pattern collections
+│   ├── constants.rs      # Command bit flags (STITCH, JUMP, TRIM)
+│   ├── encoder.rs        # Transcoder for complex transforms
+│   └── matrix.rs         # Transformation matrices
+├── formats/              # Format I/O and registry
+│   ├── registry.rs       # FormatRegistry (dynamic format discovery)
+│   └── io/               # Format I/O (15 bidirectional formats)
+│       ├── readers/      # DST, PES, JEF, VP3, EXP, etc.
+│       ├── writers/      # Paired writers + SVG, PNG, TXT
+│       ├── detector.rs   # Format detection from file content
+│       └── utils.rs      # ReadHelper/WriteHelper for binary I/O
+├── palettes/             # Thread color databases
+│   └── thread_*.rs       # JEF, PEC, SEW, SHV, HUS brand palettes
+└── utils/                # Cross-cutting concerns
+    ├── error.rs          # Error/Result types
+    ├── batch.rs          # BatchConverter/MultiFormatExporter
+    ├── processing.rs     # Pattern utilities (normalize, fix_color_count)
+    ├── palette.rs        # Thread palette management
+    └── compress.rs       # Huffman compression (for HUS format)
 ```
 
 ### Key Design Patterns
@@ -160,7 +142,57 @@ cargo fmt                     # Format code
 
 -   Always run `cargo test --lib` (not `cargo test`) - project uses library-only tests
 -   **Always run `.\validate.ps1` before considering work complete** - this is the authoritative pre-commit check
--   No binary targets (library-only project)
+-   CLI binary available: `cargo run --bin butabuti -- <command>` for testing CLI functionality
+
+### CLI Tool Commands
+
+The CLI binary in `src/bin/butabuti.rs` provides command-line utilities:
+
+```bash
+# Convert between formats
+cargo run --bin butabuti -- convert input.dst output.pes
+
+# Display pattern info
+cargo run --bin butabuti -- info design.dst
+
+# Validate pattern file
+cargo run --bin butabuti -- validate pattern.pes
+
+# Batch convert directory
+cargo run --bin butabuti -- batch ./input ./output pes
+
+# List supported formats
+cargo run --bin butabuti -- list-formats
+```
+
+When adding CLI commands, update the match statement in `main()` and `print_usage()` function.
+
+### WASM Build Commands
+
+Build WebAssembly bindings for browser use:
+
+```powershell
+# Build WASM package
+wasm-pack build --target web --features wasm
+
+# Move output to wasm directory
+Move-Item pkg wasm/pkg
+
+# Or use build script
+.\wasm\build.ps1
+
+# Test locally with HTTP server
+cd wasm
+npx http-server -p 8000 -c-1
+# Then open http://localhost:8000
+```
+
+**WASM Requirements**:
+
+-   `wasm-pack` installed: `cargo install wasm-pack`
+-   `[lib] crate-type = ["cdylib", "rlib"]` in Cargo.toml (already configured)
+-   Must be served over HTTP (not `file://`) due to WASM security requirements
+-   See `Butabuti.wiki/WASM-Browser-Support.md` for complete documentation
 
 ### Feature Flags
 
@@ -189,10 +221,11 @@ butabuti = { version = "0.1.0", features = ["full"] }  # All features
     - **Critical**: Use `pattern.add_stitch_relative()` for delta-encoded formats (DST, PEC, etc.)
     - Use `pattern.add_stitch_absolute()` for absolute coordinate formats (rare)
     - Add threads via `pattern.add_thread()` as discovered (order matters!)
-    - Extract metadata with `pattern.set_metadata(key, value)` - see DST reader for examples
+    - Extract metadata with `pattern.add_metadata(key, value)` - see DST reader for examples
     - Pattern tracks `previous_x`/`previous_y` internally for relative stitching
 4. Export in `src/formats/io/readers.rs`: `pub mod formatname;`
-5. Add tests with real file samples from `testing/` directory
+5. **Register format**: Add to `FormatRegistry` in `src/formats/registry.rs` (see existing entries)
+6. Add tests with real file samples (place test files in workspace root or examples/)
     - Test pattern: `cargo test --lib readers::formatname`
 
 #### Writer Template
@@ -208,7 +241,8 @@ butabuti = { version = "0.1.0", features = ["full"] }  # All features
     - Usage: `file.write_u16_le(value)?;` or `file.write_string_fixed("text", 16)?;`
     - Always check format specs for endianness (LE vs BE)
 4. Export in `src/formats/io/writers.rs`: `pub mod formatname;`
-5. Add round-trip test if reader exists (read → write → read → compare stitch counts)
+5. **Register format**: Add to `FormatRegistry` in `src/formats/registry.rs` (see `write_pattern()` method)
+6. Add round-trip test if reader exists (read → write → read → compare stitch counts)
     - Test pattern: `cargo test --lib writers::formatname`
 
 ### Format-Specific Encoding
@@ -273,11 +307,58 @@ For simple transforms, use pattern methods: `translate()`, `move_center_to_origi
 -   `fix_color_count(pattern)` - Add missing threads for color changes
 -   `interpolate_trims(pattern, max_jump)` - Convert TRIMs to JUMPs for unsupported formats
 
+### Format Registry
+
+`formats/registry.rs` provides centralized format management:
+
+```rust
+use butabuti::formats::registry::FormatRegistry;
+
+let registry = FormatRegistry::new();
+
+// Get format info
+let format = registry.get_format_from_path("design.dst").unwrap();
+assert_eq!(format.name, "DST");
+assert!(format.can_read && format.can_write);
+
+// Read/write using registry
+let mut file = File::open("design.dst")?;
+let pattern = registry.read_pattern(&mut file, "DST")?;
+
+let mut output = File::create("design.pes")?;
+registry.write_pattern(&pattern, &mut output, "PES")?;
+```
+
+When adding new formats, update registry in two places:
+
+1. Add `FormatInfo` entry to `FormatRegistry::new()`
+2. Add match arm to `read_pattern()` and `write_pattern()` methods
+
+### Color Groups
+
+Organize threads into logical categories using `ColorGroup`:
+
+```rust
+use butabuti::core::color_group::{ColorGroup, ThreadGrouping};
+
+// Create groups manually
+let mut skin = ColorGroup::new("Skin Tones")
+    .with_description("All skin colors");
+skin.add_thread(0);
+skin.add_thread(1);
+
+// Auto-group by similarity
+let grouping = ThreadGrouping::from_pattern(&pattern);
+let grouped = grouping.auto_group_by_similarity(0.15)?; // 15% color difference
+```
+
+See `src/core/color_group.rs` for full API including hierarchical groups, metadata, and visibility controls.
+
 ## Testing Requirements
 
 -   All new features need unit tests in cfg(test) modules
 -   Test edge cases: empty patterns, single stitch, invalid data
--   Format readers: test with real file samples from `testing/` directory
+-   Format readers: test with real file samples (place test files in workspace root or `examples/`)
 -   Round-trip tests: read → write → read → compare stitch counts
 -   **Critical**: Always run `cargo test --lib` (not `cargo test`) - project has no integration tests
 -   Test commands:
@@ -426,6 +507,8 @@ results.print_summary();
 
 ### ✅ DO
 
+-   **Update Documentations**: On every little change in our codebase, update documentation in `Butabuti.wiki/`
+-   **Clean Documentation**: Make sure you write clean and concise documentation in the wiki, this documentation is for the end user.
 -   **Run tests after every change**: `cargo test --lib` must pass with 0 failures
 -   **Fix clippy warnings**: `cargo clippy -- -D warnings` must produce zero warnings
 -   **Format code**: Run `cargo fmt` before committing
@@ -440,7 +523,7 @@ results.print_summary();
 ### ❌ DON'T
 
 -   **Don't create markdown files automatically**: Documentation files should only be created when explicitly requested
-    -   Wiki documentation lives in `docs/` folder
+    -   Wiki documentation lives in `Butabuti.wiki/` folder
     -   Don't create summary files like `IMPLEMENTATION.md`, `SUMMARY.md`, etc. after changes
     -   README.md, IMPROVEMENTS.md, and TODOS.md are the only markdown files to update routinely
 -   **Don't use `panic!()` in library code**: Always return `Result` with descriptive errors
@@ -459,4 +542,4 @@ results.print_summary();
 -   Thread palettes: `palettes/thread_*.rs` (brand-specific color mappings)
 -   TODO list: `TODOS.md` (comprehensive feature roadmap)
 -   Contributing guide: `CONTRIBUTING.md` (PR requirements, code standards)
--   Wiki documentation: `docs/` (comprehensive user documentation)
+-   Wiki documentation: `Butabuti.wiki/` (comprehensive user documentation)
